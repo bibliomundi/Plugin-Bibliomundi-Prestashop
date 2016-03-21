@@ -28,7 +28,7 @@
  */
 
 // NEW INSTANCE OF THE PURCHASE. YOU CAN SEND MORE THEN ONE ITEM ON THE PURCHASE.
-$purchase = new BBM\Purchase('0fde0aed1f14f224e9c5fc80cd18851f9ff463aa', 'ceea142ef2c051cfb02d2e0948520441b1312274');
+$purchase = new BBM\Purchase('YOUR_API_KEY', 'YOUR_API_SECRET');
 
 /*
  * Server environment that you want to use: sandbox or production.
@@ -101,9 +101,9 @@ try
     // WHATEVER YOU SEND TO US, BUT, STAY ON THE PATTERNS AND FOLLOW THE GUIDE
     // AND WE WILL NOT HAVE FURTHER PROBLEMS.
 
-    echo $purchase->checkout('TEST', time());
+    echo $purchase->checkout('TRANSACTION_KEY', time());
 }
 catch(\BBM\Server\Exception $e)
 {
-   var_dump($e);
+    echo $e;
 }

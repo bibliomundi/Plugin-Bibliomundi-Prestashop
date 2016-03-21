@@ -47,6 +47,13 @@ class Catalog extends Connect
     private $data;
 
     /**
+     * The filters that we will interpret.
+     * @see filter() function
+     * @var Mixed
+     */
+    private $filter;
+
+    /**
      * Scope that you want to get from the API
      * @property
      */
@@ -106,8 +113,68 @@ class Catalog extends Connect
     }
 
     /**
+     * This function will add filters to your search, you will be able to send only
+     * the filters that we expect to:
+     *  - (enum) drm:
+     *      "yes": Will return only DRM protected ebooks.
+     *      "no": Will return only unprotected ebooks.
+     *
+     *  - (int) image_width: The width that you want your covers came. We recommend that you
+     *                       search in your store, the maximum image size and set it here.
+     *
+     *  - (int) image_height: The height that you want your covers came. We recommend that you
+     *                        search in your store, the maximum image size and set it here.
+     *
+     * IMPORTANT:
+     *  WE HIGHLY RECOMMEND THAT YOU ONLY SET THE HEIGHT OF THE IMAGE, TO KEEP THE RATIO
+     *  IN PROPORTION OF THE ORIGINAL COVER. SETTING BOOTH, HEIGHT AND WIDTH CAN MESS AROUND
+     *  WITH THE RATIO.
+     *
+     * @param array $filters
+     * @throws Exception
+     */
+    public function filter(Array $filters)
+    {
+        if($this->verbose)
+            var_dump("FILTER VALIDATION: ", $filters);
+
+        // VALIDATE EACH FILTER VALUE
+        foreach($filters as $filter => $value)
+        {
+            // VERIFY IF THAT SPECIFIC FILTER IS IN THE CONFIGURATIONS
+            if(!in_array($filter, Server\Config\SysConfig::$ACCEPTED_FILTERS))
+                throw new Exception('The applied filter is not acceptable');
+
+            // VERIFY THE VALUES ACCEPTANCE, THIS WILL BE RE-VALIDATED IN THE BACKEND.
+            switch($filter)
+            {
+                // IF YES, ONLY WILL RETURN DRM PROTECTED EBOOKS
+                // IF FALSE, ONLY WILL RETURN UNPROTECTED EBOOKS
+                case 'drm':
+                    if(!in_array($value, ['yes', 'no']))
+                        throw new Exception('The DRM filter must be "yes" or "no"');
+                    break;
+
+                // IT'S HIGHLY RECOMMENDED THAT YOU ONLY SET ONE OF THIS
+                // TO KEEP THE SAME RATIO IN THE IMAGE.
+                case 'image_width':
+                case 'image_height':
+                    if(!is_int($value))
+                        throw new Exception('The image size must be an integer');
+                    break;
+            }
+        }
+
+        if($this->verbose)
+            var_dump("FILTER ADDED: ", $filters);
+
+        $this->filter = $filters;
+    }
+
+    /**
      * Get the XML STRING from our server, we do not handle the XML data, only output this
      * string, YOU MUST HANDLE THIS AND INSERT INTO YOUR DATABASE, see the manual if needed.
+     *
      * @return String // ONIX XML STRING
      * @throws Exception
      */
@@ -117,6 +184,11 @@ class Catalog extends Connect
         $request = new Server\Request(Server\Config\SysConfig::$BASE_CONNECT_URI . Server\Config\SysConfig::$BASE_DOWNLOAD . 'list.php', $this->verbose);
         $request->authenticate(false);
         $request->create();
+
+        // IF HAS FILTERS, ADD THEN TO THE POST
+        if(isset($this->filter))
+            $this->data['filter']['items'] = $this->filter;
+
         $request->setPost($this->data);
 
         try

@@ -28,7 +28,7 @@
  */
 
 // NEW INSTANCE OF THE DOWNLOAD. EVERY NEW DOWNLOAD MUST BE A NEW INSTANCE.
-$download = new BBM\Download('0fde0aed1f14f224e9c5fc80cd18851f9ff463aa', 'ceea142ef2c051cfb02d2e0948520441b1312274');
+$download = new BBM\Download('YOUR_APY_KEY', 'YOUR_API_SECRET');
 
 /*
  * Server environment that you want to use: sandbox or production.
@@ -45,9 +45,9 @@ $download->environment = 'sandbox';
 //$download->verbose(true);
 
 $data = [
-    'ebook_id' => 3, // YOU MUST 1 TO TEST, ANYONE MORE WILL BE COUNT AS AN ACTUAL DOWNLOAD.
+    'ebook_id' => $EBOOKID, // YOU MUST 1 TO TEST, ANYONE MORE WILL BE COUNT AS AN ACTUAL DOWNLOAD.
     'transaction_time' => time(), // IT`S HIGHLY RECOMMENDED THAT YOU CANNOT CHANGE THE TRANSACTION TIME.
-    'transaction_key' => 'TEST' // YOU MUST SET THIS TO TEST, ANY OTHER ACTIVE TRANSACTION KEY WILL BE COUNT AS AN ACTUAL DOWNLOAD.
+    'transaction_key' => $TIMESTAMP // YOU MUST SET THIS TO TEST, ANY OTHER ACTIVE TRANSACTION KEY WILL BE COUNT AS AN ACTUAL DOWNLOAD.
 ];
 
 /*

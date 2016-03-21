@@ -68,9 +68,29 @@ class Purchase extends Connect
      */
     private $data = array();
 
+    private function autenticate()
+    {
+        // VERIFY IF THE ACCESS TOKEN HAS BEEN ALREADY SET
+        if(!isset($this->data['access_token']))
+        {
+            // GET THE ACCESS TOKEN ON THE OAUTH SERVER
+            $request = new Server\Request(Server\Config\SysConfig::$BASE_CONNECT_URI . 'token.php', $this->verbose);
+            $request->authenticate(true, $this->clientId, $this->clientSecret);
+            $request->create();
+            $request->setPost(['grant_type' => Server\Config\SysConfig::$GRANT_TYPE, 'environment' => $this->environment]);
+            $response = json_decode($request->execute());
+
+            // SET THE ACCESS TOKEN TO THE NEXT REQUEST DATA.
+            $this->data['access_token'] = $response->access_token;
+            $this->data['clientID'] = $this->clientId;
+            $this->data['environment'] = $this->environment;
+        }
+    }
+
     /**
      * Validate the data and get the OAuth2 access_token for this request.
      *
+     * @param $bypass boolean Set if you want to bypass
      * @return bool
      * @throws Exception
      */
@@ -84,34 +104,23 @@ class Purchase extends Connect
             // VALIDATE THE DATA BEFORE SEND IT, ONLY TO AVOID UNNECESSARY REQUESTS.
             $this->validateData();
 
-            // IF NO EXCEPTION IS THROWN BEFORE, THE REQUEST CAN BE SENT, SO
-            // HERE WE GET THE ACCESS TOKEN FOR THIS DOWNLOAD REQUEST.
-            $request = new Server\Request(Server\Config\SysConfig::$BASE_CONNECT_URI . 'token.php', $this->verbose);
-            $request->authenticate(true, $this->clientId, $this->clientSecret);
+            // LOGIN ON THE OAUTH SERVER
+            $this->autenticate();
+
+            // SEND THE REQUEST TO VALIDATE
+            $request = new Server\Request(Server\Config\SysConfig::$BASE_CONNECT_URI . Server\Config\SysConfig::$BASE_PURCHASE . 'validate.php', $this->verbose);
+            $request->authenticate(false);
             $request->create();
-            $request->setPost(['grant_type' => Server\Config\SysConfig::$GRANT_TYPE, 'environment' => $this->environment]);
-            $response = json_decode($request->execute());
+            $request->setPost($this->data);
 
-            // SET THE ACCESS TOKEN TO THE NEXT REQUEST DATA.
-            $this->data['access_token'] = $response->access_token;
-            $this->data['clientID'] = $this->clientId;
-            $this->data['environment'] = $this->environment;
+            // SET THE DATA TO VALIDATE.
+            $response = $request->execute();
 
-            if($this->validateData())
-            {
-                $request = new Server\Request(Server\Config\SysConfig::$BASE_CONNECT_URI . Server\Config\SysConfig::$BASE_PURCHASE . 'validate.php', $this->verbose);
-                $request->authenticate(false);
-                $request->create();
-                $request->setPost($this->data);
+            // VERIFY THE RESPONSE CODE
+            if(!in_array($request->getHttpStatus(), [200, 201]))
+                throw new Exception($response, $request->getHttpStatus());
 
-                // SET THE DATA TO VALIDATE.
-                $response = $request->execute();
-
-                if(!in_array($request->getHttpStatus(), [200, 201]))
-                    throw new Exception($response, $request->getHttpStatus());
-
-                return $response;
-            }
+            return $response;
 
         }
         catch(Exception $e)
@@ -179,10 +188,16 @@ class Purchase extends Connect
      */
     public function checkout($transactionKey, $transactionTime)
     {
+        // SET THE DATA TO BE SENT
+        $this->data = $this->customer;
         $this->data['transactionKey'] = $transactionKey;
         $this->data['saleDate'] = date('Y-m-d H:i:s', $transactionTime);
         $this->data['items'] = $this->items;
 
+        // LOGIN ON OAUTH SERVER
+        $this->autenticate();
+
+        // SEND THE REQUEST TO THE CHECKOUT
         $request = new Server\Request(Server\Config\SysConfig::$BASE_CONNECT_URI . Server\Config\SysConfig::$BASE_PURCHASE . 'purchase.php', $this->verbose);
         $request->authenticate(false);
         $request->create();

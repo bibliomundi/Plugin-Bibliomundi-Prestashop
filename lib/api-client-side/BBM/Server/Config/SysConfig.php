@@ -69,4 +69,9 @@ class SysConfig {
      * @var array
      */
     public static $ACCEPTED_SCOPES = ['complete', 'updates'];
+
+    /**
+     * @var array
+     */
+    public static $ACCEPTED_FILTERS = ['drm', 'image_width', 'image_height'];
 }
