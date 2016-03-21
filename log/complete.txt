@@ -1,0 +1,10 @@
+2016-01-27 15:31:22 - Duplicate entry '5-1' for key 'PRIMARY'<br /><br /><pre>INSERT INTO `ps_category_shop` (`id_category`, `id_shop`) VALUES ('5', '1')</pre>
+2016-01-27 15:33:11 - Duplicate entry '6-1-1' for key 'PRIMARY'<br /><br /><pre>INSERT INTO `ps_category_lang` (`id_category`, `name`, `link_rewrite`, `description`, `meta_title`, `meta_description`, `meta_keywords`, `id_lang`, `id_shop`) VALUES ('6', 'CIÊNCIAS NATURAIS', 'ciencias-naturais', '', '', '', '', '1', '1')</pre>
+2016-01-27 15:34:33 - Duplicate entry '7-1-1' for key 'PRIMARY'<br /><br /><pre>INSERT INTO `ps_category_lang` (`id_category`, `name`, `link_rewrite`, `description`, `meta_title`, `meta_description`, `meta_keywords`, `id_lang`, `id_shop`) VALUES ('7', 'TEATRO BRASILEIRO', 'teatro-brasileiro', '', '', '', '', '1', '1')</pre>
+2016-01-27 15:35:39 - Duplicate entry '8-1-1' for key 'PRIMARY'<br /><br /><pre>INSERT INTO `ps_category_lang` (`id_category`, `name`, `link_rewrite`, `description`, `meta_title`, `meta_description`, `meta_keywords`, `id_lang`, `id_shop`) VALUES ('8', 'LÍNGUA INGLESA', 'lingua-inglesa', '', '', '', '', '1', '1')</pre>
+2016-01-27 15:39:25 - Duplicate entry '9-1-1' for key 'PRIMARY'<br /><br /><pre>INSERT INTO `ps_category_lang` (`id_category`, `name`, `link_rewrite`, `description`, `meta_title`, `meta_description`, `meta_keywords`, `id_lang`, `id_shop`) VALUES ('9', 'LITERATURA AMERICANA', 'literatura-americana', '', '', '', '', '1', '1')</pre>
+2016-01-27 15:49:57 - 
+2016-01-27 15:51:06 - 
+2016-01-27 15:53:27 - 
+2016-01-27 15:56:06 - 
+2016-01-27 16:11:33 - 
