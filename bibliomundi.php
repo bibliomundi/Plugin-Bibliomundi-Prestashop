@@ -33,7 +33,7 @@ class Bibliomundi extends Module
 	public $clientSecret;
 	public $operation;
 	public $environment;
-	public $operationAlias = array(1 => 'complete', 2 => 'updates',);
+	public $operationAlias = array(1 => 'complete', 2 => 'updates');
 	public $environmentAlias = array(1 => 'sandbox', 2 => 'production');
 
 	/*
