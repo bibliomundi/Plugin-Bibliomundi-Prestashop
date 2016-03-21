@@ -133,7 +133,7 @@ class Catalog extends Connect
      * @param array $filters
      * @throws Exception
      */
-    public function filter(Array $filters)
+    public function filters(Array $filters)
     {
         if($this->verbose)
             var_dump("FILTER VALIDATION: ", $filters);
