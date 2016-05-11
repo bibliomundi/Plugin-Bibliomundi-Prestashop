@@ -489,11 +489,9 @@ class Bibliomundi extends Module
 	        		$this->{'msgLog'} = $e->getMessage();
 	        		$output .= $this->displayError($this->l($e->getMessage()));
 	        	}
-	        	finally
-	        	{
-	        		$this->writeLog();
-	        		$this->setConfig();//Atualiza os dados de configuração independentemente
-	        	}
+	        	
+        		$this->writeLog();
+        		$this->setConfig();//Atualiza os dados de configuração independentemente
 	        }
 	    }
 
