@@ -19,7 +19,5 @@ catch(Exception $e)
 {
 	$bbm->{'msgLog'} = $e->getMessage();
 }
-finally
-{
-	$bbm->writeLog();
-}
+
+$bbm->writeLog();
