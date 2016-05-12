@@ -12,7 +12,7 @@ Nós somos a <a href="http://www.bibliomundi.com.br" target="blank">Bibliomundi<
 
 <a href="http://php.net" target="blank">PHP</a> na versão 5.4 ou maior.
 
-Extensão <a href="http://php.net/manual/pt_BR/book.mcrypt.php" target="blank">mcrypt</a> do PHP
+Extensões <a href="http://php.net/manual/pt_BR/book.mcrypt.php" target="blank">mcrypt</a> e <a href="http://php.net/manual/pt_BR/book.curl.php" target="blank">cURL</a> do PHP
 
 #Instalação
 
