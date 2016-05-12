@@ -358,7 +358,7 @@ class Bibliomundi extends Module
 				$idFeatureValue = $product->addFeaturesToDB($this->featureIDIdiom, null, 1);
 				$product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getIdiom());
 
-				if(!empty($bbmProduct->getCollectionTitle()))
+				if(!$bbmProduct->getCollectionTitle())
 				{
 					$idFeatureValue = $product->addFeaturesToDB($this->featureIDCollectionTitle, null, 1);
 					$product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getCollectionTitle());
@@ -467,7 +467,7 @@ class Bibliomundi extends Module
 		}
 		else if (Tools::isSubmit('submit' . $this->name . 'operation'))
 	    {
-	        if (empty(Tools::getValue('client_id')) || empty(Tools::getValue('client_secret')))
+	        if (!Tools::getValue('client_id') || !Tools::getValue('client_secret'))
 	            $output .= $this->displayError($this->l('Chave de identificação ou Chave Secreta não preencidos!'));
 	        else if(!in_array(Tools::getValue('operation'), array('1', '2')) || !in_array(Tools::getValue('environment'), array('1', '2')))
 	        	$output .= $this->displayError($this->l('Tipo de Operação ou ambiente inválidos!'));
