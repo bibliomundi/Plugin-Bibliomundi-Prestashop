@@ -1102,10 +1102,10 @@ class Bibliomundi extends Module
 		$feature  = new Feature();
 
 		if(count($categories))
-			$category->deleteSelection(array_map(function($category){return $category['id_category']}, $categories));//Eh retornado um array multidimensonal, portanto essa bizarrice
+			$category->deleteSelection(array_map(function($category){return $category['id_category'];}, $categories));//Eh retornado um array multidimensonal, portanto essa bizarrice
 
 		if(count($products))
-			$product->deleteSelection(array_map(function($product){return $product['id_product']},$products));//Idem
+			$product->deleteSelection(array_map(function($product){return $product['id_product'];},$products));//Idem
 
 		$feature->deleteSelection(
 			array
