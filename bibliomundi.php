@@ -358,7 +358,7 @@ class Bibliomundi extends Module
 				$idFeatureValue = $product->addFeaturesToDB($this->featureIDIdiom, null, 1);
 				$product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getIdiom());
 
-				if(!$bbmProduct->getCollectionTitle())
+				if($bbmProduct->getCollectionTitle())
 				{
 					$idFeatureValue = $product->addFeaturesToDB($this->featureIDCollectionTitle, null, 1);
 					$product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getCollectionTitle());
