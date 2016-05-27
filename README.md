@@ -44,7 +44,7 @@ Você não irá conseguir fazer a chamada via url, como por exemplo "/seuprestas
 - Não se esqueça de renomear a pasta, que se encontra na raiz do zip, para "bibliomundi". Sem isso você não conseguirá instalar o módulo.
 - É necessário que o Real seja a sua moeda principal, do contrário os produtos serão inseridos com preços indesejados.
 - Dependendo das configurações de seu servidor é possível que ocorra timeout quando importando o nosso catálogo. Se isso acontecer simplesmente refaça o processo até que todos os ebooks tenham sido importados.(Isso também serve para as atualizações diárias).
-- Após desinstalar o nosso módulo, todos os nossos ebooks serão removidos de sua lista de produtos, bem como suas respectivas categorias, características e etiquetas.
+- Após desinstalar o nosso módulo, todos os nossos ebooks serão removidos de sua lista de produtos, bem como suas respectivas categorias, características e etiquetas e isso também pode demorar vários minutos.
 - Execute as atualizações entre 01 e 06 da manhã(GMT-3).
 
 #FAQ
