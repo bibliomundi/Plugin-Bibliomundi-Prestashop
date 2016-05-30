@@ -33,7 +33,7 @@ Atenção. O tempo da importação irá variar de acordo com vários fatores, ta
 
 Realizamos atualizações diárias em nosso sistema e você precisará, também diariamente, criar uma rotina para checar se existem ebooks a serem inseridos, atualizados ou deletados.
 Recomendamos que crie uma agendador de tarefas para rodar entre 01 e 06 da manhã(GMT-3) afim de evitar que ebooks sejam disponibilizados com dados defasados podendo assim causar erros na venda.
-Tudo o que você precisa fazer é executar, periodicamente, o arquivo "cron.php" que se encontra no diretório "modules/bibliomundi".
+Tudo o que você precisa fazer é executar, periodicamente, o arquivo "cron.php" que se encontra no diretório "modules/bibliomundi" do prestashop.
 
 Atenção. Esta etapa requer conhecimentos de infra-estrutura. Sugerimos que contacte o administrador do servidor. 
 
