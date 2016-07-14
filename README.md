@@ -18,7 +18,7 @@ Extensões <a href="http://php.net/manual/pt_BR/book.mcrypt.php" target="blank">
 
 Baixe o nosso módulo em <a target="blank" href="https://drive.google.com/file/d/0BzwFNhJ9FBNwd3VSYWZOYlc2Yms/view?usp=sharing">https://drive.google.com/file/d/0BzwFNhJ9FBNwd3VSYWZOYlc2Yms/view?usp=sharing</a>. Na aba de criação de módulos do Prestahop faça o upload. Automaticamentne o nosso Módulo aparecerá em sua lista. Clique em instalar. Um alerta será exibido. Apenas clique em “prosseguir com a instalação”.
 
-Obs. Caso esteja tendo dificuldades na instalação, configuração ou importação dos ebooks, disponibilizamos um tutorial com ilustrações. Você pode visualizar <a href="https://docs.google.com/document/d/1PYEBxSvhAQWZ65DMtzXuZ-tOP1q6ePitTuyxrttXdpg/edit?usp=sharing">aqui</a>.
+Obs. Caso esteja tendo dificuldades na instalação, configuração ou importação dos ebooks, disponibilizamos um tutorial com ilustrações. Você pode visualizar <a target="blank" href="https://docs.google.com/document/d/1PYEBxSvhAQWZ65DMtzXuZ-tOP1q6ePitTuyxrttXdpg/edit?usp=sharing">aqui</a>.
 
 #Configurando o Módulo
 
