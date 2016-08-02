@@ -37,7 +37,7 @@ class Bibliomundi extends Module
 	public $environmentAlias = array(1 => 'sandbox', 2 => 'production');
 
 	/*
-	 * As features serão os campos personalizados do nosso módulo. Nao considere gambiarra, por favor!
+	 * The features will be the personalised fields of our modules. Do not attempt workarounds, please!
 	 */
 	
 	public $featureIDISBN;
@@ -49,17 +49,17 @@ class Bibliomundi extends Module
 	public $featureIDProtectionType;
 	public $featureIDAgeRating;
 	public $featureIDCollectionTitle;
-	public $featureIDAutor;//Os autores tbem serao inseridos como atributos.
-	public $featureIDIlustrador;//Os autores tbem serao inseridos como atributos.
+	public $featureIDAutor;//Authors are also inserted as features
+	public $featureIDIlustrador;//Authors are also inserted as features
 
    /*
     *
-	* O autor será inserido por default como atributo, mas ainda iremos possibilitar ao 
-	* Usuário optar por escolher entre inserir os autores como categoria ou como tags 
+	* The Author will be inserted as Feature by default, but we will still allow
+	* The user to choose between inserting authors as Categories or Tags
 	*
 	*/
 
-	public $categoryIDAutor;//Id da categoria autor que sera o pai para todas os autores inseridos
+	public $categoryIDAutor;//Category ID in which Author will be Parent of other inserted Authors
 	
 
 	public function __construct()
@@ -112,7 +112,7 @@ class Bibliomundi extends Module
 
 	private function setConfig()
 	{
-		/* Somente estes valores poderão ser atualizados após a instalação */
+		/* These are the only values that may be updated after insatallation */
 
         Configuration::updateValue('BBM_OPTION_CLIENT_ID', $this->clientID);
         Configuration::updateValue('BBM_OPTION_CLIENT_SECRET', $this->clientSecret);
@@ -122,7 +122,7 @@ class Bibliomundi extends Module
 
 	private function getConfig()
 	{
-		/* Pego a porra toda sempre, mesmo sabendo que em algumas situações o retorno será nulo */
+		/* Complete verification even if, sometimes, the return might be NULL */
 
 		$this->clientID 				= Configuration::get('BBM_OPTION_CLIENT_ID');
 		$this->clientSecret 			= Configuration::get('BBM_OPTION_CLIENT_SECRET');
@@ -145,12 +145,12 @@ class Bibliomundi extends Module
 		{
 			$aux = Configuration::get('BBM_CATEGORY_ID_AUTOR');
 
-			if(!Category::categoryExists($aux))//para o caso do usuario ter deletado a categoria Autor
+			if(!Category::categoryExists($aux))//In case the user has deleted the Author Category
 			{
 				$category = new Category();
 				$category->name[(int)Configuration::get('PS_LANG_DEFAULT')] = 'Autor';
 				$category->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = 'Autor';
-				$category->id_parent = Category::getRootCategory()->id;//Associa a categoria Home
+				$category->id_parent = Category::getRootCategory()->id;//Associate to Home Category
 				$category->add();
 
 				Configuration::updateValue('BBM_CATEGORY_ID_AUTOR', $category->id);
@@ -180,12 +180,12 @@ class Bibliomundi extends Module
 		}
 	}
 
-	//Coração do módulo!
+	//Core of Module!
 	public function proccess()
 	{
 		try
 		{
-			set_time_limit(0);//Evitar timeout, tendo em vista que iremos realizar diversas
+			set_time_limit(0);//Avoids timeout, considering there will be a number of operations
 
 			//header('Content-Type: application/xml; charset=utf-8'); echo $this->getCatalog(); exit;
 			$parser = new \BBM\parser\OnixParser($this->getCatalog());
@@ -195,7 +195,7 @@ class Bibliomundi extends Module
 			if(!$productsAvailable = $parser->getOnix()->getProductsAvailable())
 				throw new Exception("Não há ebooks para importar!");
 			
-			//Seja complete ou update, está tudo aqui!	
+			//Be it Complete or Update, it will all be here!	
 			foreach($productsAvailable as $bbmProduct)
 			{
 				//d($bbmProduct);
@@ -205,23 +205,23 @@ class Bibliomundi extends Module
 
 				$product->is_bbm = true;
 
-				$idProductAlreadyInserted = MYProduct::getIDByIDBBM($bbmProduct->getId());//Checa se ja existe
+				$idProductAlreadyInserted = MYProduct::getIDByIDBBM($bbmProduct->getId());//Verifies if it exists
 
-				//Evita que um mesmo ebook seja inserido mais de uma vez
+				//Avoids duplicated entries
 				if($idProductAlreadyInserted && $bbmProduct->getOperationType() == 'insert')
 					continue;
 
 				if($idProductAlreadyInserted && $bbmProduct->getOperationType() == 'update')
 					$product = new MYProduct($idProductAlreadyInserted);
 
-				//Para o caso do catalog ser o update e a operacao ser Deletar produto
+				//In case the process of Updated includes the Deletion of a Product
 				if($bbmProduct->getOperationType() == 'delete')
 				{
 					if($idProductAlreadyInserted)
 					{
 						$product = new MYProduct($idProductAlreadyInserted);
 						$product->delete();
-						continue;//Passa para o proximo ebook
+						continue;//Moves on to next ebook
 					}
 					else
 						continue;
@@ -253,8 +253,8 @@ class Bibliomundi extends Module
 				$product->id_tax_rules_group = 0;
 				$product->indexed = 1;
 
-				$categoriesIds = array();//Vamos inserindo as categorias para so depois associa-las ao produto
-				$tags 		   = $bbmProduct->getTags();//Se nao houver tags um array vazio eh retornado
+				$categoriesIds = array();//Inserts firstly the categories and then associate them to the product
+				$tags 		   = $bbmProduct->getTags();//If there are no Tags, a empty array is returned
 
 				//Assuntos(Categorias)
 				if(count($bbmProduct->getCategories()))
@@ -267,13 +267,13 @@ class Bibliomundi extends Module
 
 						if($id = MYCategory::getIDByIDBBM($bbmCategory->getCode()))
 							$category = new MYCategory($id);
-						else //Inserir uma nova
+						else //Insert a new Category
 						{
 							$category->is_bbm = true;
 
 							$category->name[(int)Configuration::get('PS_LANG_DEFAULT')] = $bbmCategory->getName();
 							$category->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite($bbmCategory->getName());
-							$category->id_parent = Category::getRootCategory()->id;//Associa a categoria default que geralmente eh a home
+							$category->id_parent = Category::getRootCategory()->id;//Associates a Default Category, which usually is Home
 							$category->add();
 						}
 						
@@ -282,23 +282,23 @@ class Bibliomundi extends Module
 					}
 				}
 				
-				//Segundo regras de negocio, o autor NAO PODE MUDAR, logo, ignoramo-os no update
+				//According to Premisses, the Author MAY NOT CHANGE, therefore we ignore them on Update routine
 				if($bbmProduct->getOperationType() == 'insert')
 				{
-					if(Configuration::get('BBM_AUTOR_INSERT_TYPE') != 3)//3 nao insere como nada
+					if(Configuration::get('BBM_AUTOR_INSERT_TYPE') != 3)//3 Keeps Author as Feature
 					{
-						//Contribuidores
+						//Contributors
 						if(count($bbmProduct->getContributors()))
 						{
 							foreach ($bbmProduct->getContributors() as $contributor)
 							{
 								if($contributor instanceof \BBM\model\Contributor\Autor)
 								{
-									//Vamos inserir o autor como uma categoria, tag ou simplesmente deixá-lo como atributo(feature)
+									//Authors are inserted as Category, Tag, or simply leave them as a Feature
 
-									if(Configuration::get('BBM_AUTOR_INSERT_TYPE') == 1)//Inserir como tag
+									if(Configuration::get('BBM_AUTOR_INSERT_TYPE') == 1)//Insert as Tag
 										$tags[] = $contributor->getFullName();
-									else if(Configuration::get('BBM_AUTOR_INSERT_TYPE') == 2)//Inserir como categoria
+									else if(Configuration::get('BBM_AUTOR_INSERT_TYPE') == 2)//Insert as Category
 									{
 										$category = new MYCategory();
 
@@ -306,13 +306,13 @@ class Bibliomundi extends Module
 
 										if($id = MYCategory::getIDByIDBBM($contributor->getId()))
 											$category = new MYCategory($id);
-										else //Inserir uma nova
+										else //Inserts a new Category
 										{
 											$category->is_bbm = true;
 
 											$category->name[(int)Configuration::get('PS_LANG_DEFAULT')] = $contributor->getFullName();
 											$category->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite($contributor->getFullName());
-											$category->id_parent = $this->categoryIDAutor;//Associa a categoria padrao que criamos que se chama Autor
+											$category->id_parent = $this->categoryIDAutor;//Associates the Default Category as Author
 											$category->add();
 										}
 
@@ -321,36 +321,36 @@ class Bibliomundi extends Module
 								}
 								/*else if($contributor instanceof \BBM\model\Contributor\Ilustrador)
 								{
-									Por hora, nao ha nao pra fazer aqui!
+									Defines that the only Contributors that may be a Category are Authors
 								}*/
 							}
 						}
 					}
 				}
 
-				$product->id_category_default = $categoriesIds[0];//Nao ha regras aqui. A escolha pode ser aleatoria
+				$product->id_category_default = $categoriesIds[0];//There are no rules set here. Selection may be random
 
 				if($idProductAlreadyInserted && $bbmProduct->getOperationType() == 'update')
 				{
-					$product->deleteFeatures();//Eh assim que o prestashop trabalha internamente. Deleta todas as features antes e depois cria novamente.
+					$product->deleteFeatures();//This is how Prestashop works internally. Deletes all Features to then recreate them.
 					$product->update();
 				}
 				else
-					$product->add();//Adicionar antes para poder ter acesso ao insert_id e entao poder realizar as operacoes abaixo
+					$product->add();//Add before to gain access to Insert_ID to permit operations below
 
-				//Associa todas as tags, inclusive o autor, se for o caso, ao produto.
-				//Obs. Se ja existir uma tag com o mesmo nome, o prestashop ignora a inserção. Excelente parao caso de ser update. Nao temos que fazer nada.
+				//Associate all Tags, including the Author, if it´s the case, to the Product.
+				//OBS: If there is already a Tag with the same name, Prestashop ignores this addition. Which is excelent for Update routine.
 				if(count($tags))
 					Tag::addTags((int)Configuration::get('PS_LANG_DEFAULT'), $product->id, $tags);
 
-				//Associa o produto a todas as categorias criadas. Se ja estiver, a associacao eh ignorada!
+				//Associates Product to all created Categories. If they exist, association is ignored!
 				$product->addToCategories($categoriesIds);
 
-				//Regras de inserção e associação das custom features
+				//Rules for addition and association of Custom Features
 
-				//1 - Criar a feature e pegar o id dela(Aqui cria uma vez so. Ao iniciarmos a classe ja temos que ter ela)
-				//2 - Criar o feature value atraves da funcao addFeaturesToDB e pegar o id
-				//3 - Associar o feature value ao produto e a linguagem atraves da funcao addFeaturesCustomToDB
+				//1- Creates a Feature and collects its ID
+				//2- Creates a Value Feature by addFeaturesToDB function and collects ID
+				//3- Associates Value Feature to Product and language through addFeaturesCustomToDB function
 
 				$idFeatureValue = $product->addFeaturesToDB($this->featureIDISBN, null, 1);
 				$product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getISBN());
@@ -382,14 +382,14 @@ class Bibliomundi extends Module
 				$idFeatureValue = $product->addFeaturesToDB($this->featureIDPublisherName, null, 1);
 				$product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getPublisherName());
 
-				//Insere os autores separando-os por virgula
+				//Inserts Authors separated by common commas ","
 				if($autorsName = implode(',', array_map(array('\BBM\model\Contributor', 'getFullNameStatically'), $bbmProduct->getContributorsByType('Autor'))))
 				{
 					$idFeatureValueAutor = $product->addFeaturesToDB($this->featureIDAutor, null, 1);
 					$product->addFeaturesCustomToDB($idFeatureValueAutor, 1, $autorsName);
 				}
 
-				//Insere os ilustradores separando-os por virgula
+				//Inserts Illustrators separated by common commas ","
 				if($ilustradorsName = implode(',', array_map(array('\BBM\model\Contributor', 'getFullNameStatically'), $bbmProduct->getContributorsByType('Ilustrador'))))
 				{
 					$idFeatureValueIlustrador = $product->addFeaturesToDB($this->featureIDIlustrador, null, 1);
@@ -412,7 +412,7 @@ class Bibliomundi extends Module
 					$download->add();
 				}
 
-				//Para o caso do update, pois so podemos ter uma imagem como capa
+				//For Update routine as we may only have one Image as Product Cover
 				if($images = $product->getImages((int)Configuration::get('PS_LANG_DEFAULT')))
 				{
 					foreach ($images as $img)
@@ -451,10 +451,10 @@ class Bibliomundi extends Module
 	{
 		$output = '';
 
-		//Quando o formulário de definição inicial for submetido(Por hora somente a inserção do autor mesmo)
+		//When the initial definition  form is issued (For now, only the addition of Authors)
 		if(Tools::isSubmit('submit' . $this->name . 'autor_insert_type'))
 		{
-			if(in_array(Tools::getValue('autor_insert_type'), array('1', '2', '3')))//0 = Sem definição, 1 = Categoria, 2 = Tag
+			if(in_array(Tools::getValue('autor_insert_type'), array('1', '2', '3')))//0 = No definition, 1 = Category, 2 = Tag
 			{
 				if(!$this->insertAutorBy(Tools::getValue('autor_insert_type')))
 					$output .= $this->displayError($this->l('Erro interno!'));
@@ -491,7 +491,7 @@ class Bibliomundi extends Module
 	        	}
 	        	
         		$this->writeLog();
-        		$this->setConfig();//Atualiza os dados de configuração independentemente
+        		$this->setConfig();//Updates the metadata configuration independentally
 	        }
 	    }
 
@@ -500,7 +500,7 @@ class Bibliomundi extends Module
 
 	public function displayForm()
 	{	    
-	    //Se a forma(Como Tag ou Categoria) de inserir o autor ainda não foi definida
+	    //If the definition of Authors (as Category or Tag) has yet to be defined
 	    if(Configuration::get('BBM_AUTOR_INSERT_TYPE') === false)
 		{
 			return $this->getFormInsertAutor();
@@ -511,7 +511,7 @@ class Bibliomundi extends Module
 	    }
 	}
 
-	//As features serao os campos personalizados, digamos assim.
+	//The Features are personalised fields
 	private function createFeaturesAndOptions()
 	{
 		$features = array
@@ -539,13 +539,13 @@ class Bibliomundi extends Module
 	    		return false;
 	    	else
 	    	{
-	    		//Associa o id a feature
+	    		//Associate ID to Feature
 	    		if(!Configuration::updateValue('BBM_FEATURE_ID_' . $key, $feature->id))
 	    			return false;
 	    	}
  		}
 
-		//Seta uns valores default para essas opcoes
+		//Sets Default Values for these options
  		if(!Configuration::updateValue('BBM_OPTION_CLIENT_ID', null) ||
         	!Configuration::updateValue('BBM_OPTION_CLIENT_SECRET', null) ||
         		!Configuration::updateValue('BBM_OPTION_OPERATION', 1) ||
@@ -555,23 +555,23 @@ class Bibliomundi extends Module
  		return true;
 	}
 
-	//As categorias serão criadas dinamicamente, pois seria inviável inserí-las previamente no banco(Diferentemente
-	//das features), tendo em vista que são inúmeras. Após cria-las iremos inserir na tabela de configuração.
-	//Caso algum outro ebook pertenca a ela, simplesmente pegamos o id e associamos
+	//Categories are created dynamically, as it would be unviable to insert them previously in the database (Differently
+	//from the Features), since they are innumerous. After creating them, they will be added to the Configuration Table
+	//In case na ebook belongs to it, the ID is simply associated to it
 	private function insertAutorBy($insertType)
 	{
-		if($insertType == 1)//Quando for tag nao precisamos fazer nada
+		if($insertType == 1)//If Tag, process is Ignored
 			return true;
-		else if($insertType == 2)//Categoria
+		else if($insertType == 2)//Category
 		{
 			//d($insertType);
-			//Criar a categoria autor, pegar o id e inserir na tabela configuracao
+			//Create Author Category, takes and ID and adds to Configuration Table
 
 			$category = new MYCategory();
 			$category->is_bbm = true;
 			$category->name[(int)Configuration::get('PS_LANG_DEFAULT')] = 'Autor';
 			$category->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = 'Autor';
-			$category->id_parent = Category::getRootCategory()->id;//Associa a categoria Home
+			$category->id_parent = Category::getRootCategory()->id;//Associates a Home Category
 			$category->add();
 
 			if(!$category->id)
@@ -581,10 +581,10 @@ class Bibliomundi extends Module
 				return false;
 
 			return true;
-		}else //3 = Sem definição
+		}else //3 = No Definition
 		{
-			// Não há o que fazer aqui. Simplesmente nao iremos inserir nem como categoria, nem como tag. O autor
-			// será apenas um atributo.
+			// Ignored. Since they will not be inserted as Category or Tag, Authors 
+			// will remais as Feature.
 
 			return true;
 		}
@@ -794,7 +794,7 @@ class Bibliomundi extends Module
 		        )
 		    );
 	     
-	    // Carrega/seta os valores do formulário, se já existirem.
+	    // Loads/Sets Form Values, if they already exist.
 
 	    if($this->clientID)
 	    	$helper->fields_value['client_id'] = trim(Configuration::get('BBM_OPTION_CLIENT_ID'));
@@ -818,7 +818,7 @@ class Bibliomundi extends Module
 	    return $html . $helper->generateForm($fields_form);
 	}
 
-	//Adicionar campos para identificar que o produto é nosso
+	//Adds Fields to identify which Product is Bibliomundi´s
 	private function createCustomFieldsToDB()
 	{
 		$sql = 'ALTER TABLE ' . _DB_PREFIX_ . 'product ADD bbm_id_product VARCHAR(10) NULL, ADD is_bbm TINYINT(1) NULL';
@@ -834,7 +834,7 @@ class Bibliomundi extends Module
         return true;
 	}
 
-	//Mantem a quantidade sempre em 0 que é o símbolo do infinito ):
+	//Keeps quantity at 0 which is a workaround
 	public function hookActionOrderStatusPostUpdate($params)
 	{
 		foreach($params['cart']->getProducts() as $product)
@@ -844,7 +844,7 @@ class Bibliomundi extends Module
 		}
 	}
 
-	//Realizar o checkout aqui
+	//Checkout here
 	public function hookActionPaymentConfirmation($params)
 	{
 		$bbmEbooks = array();
@@ -890,7 +890,7 @@ class Bibliomundi extends Module
 
 				foreach ($bbmEbooks as $key => $ebook) 
 				{
-					$purchase->addItem($key, $ebook['price']);//Id bbm e preço
+					$purchase->addItem($key, $ebook['price']);//Bibliomundi ID and Price
 				}
 
 				$purchase->validate();
@@ -902,7 +902,7 @@ class Bibliomundi extends Module
 			catch(Exception $e)
 			{
 				//d($e);
-				//Um erro aqui eh grave.
+				//Error at this moment is really serious.
 			}
 		}
 	}
@@ -953,19 +953,19 @@ class Bibliomundi extends Module
 
 				foreach ($bbmEbooks as $key => $ebook) 
 				{
-					$purchase->addItem($key, $ebook['price']);//Id bbm e preço
+					$purchase->addItem($key, $ebook['price']);//Bibliomundi ID and Price
 				}
 
 				$purchase->validate();
 			}
 			catch(Exception $e)
 			{
-				//Independente do erro removemos todos os ebooks, pois a api não está retornando qual o erro que ocorreu
+				//Regardless of the error, all ebooks are curretly removed from the basket as the API is not informing what error is the cause.
 				foreach ($bbmEbooks as $ebook)
 				{
 					$errors[] = $ebook['name'];
 
-					//Remover do carrinho
+					//Remove from Shopping Cart
 
 			   		Db::getInstance()->execute('
 						DELETE FROM '._DB_PREFIX_.'cart_product
@@ -973,18 +973,18 @@ class Bibliomundi extends Module
 						AND id_cart = '.(int)$params['cart']->id. '');
 				}
 /*
-				$json = json_decode(str_replace("'", '"', $e->getMessage()));//gambiarra momentanea
+				$json = json_decode(str_replace("'", '"', $e->getMessage()));//Temporary Workaround
 				$errors = array();
 
 				foreach ($json as $ebookError) 
 			    {
-			   		//Encontra id que foi retornado da mensagem
+			   		//Locates ID which returned the message
 			   		preg_match('#ID\s([0-9]+)#', $ebookError->message, $match);
 			   		$idEbookBBM = $match[1];
 
 					$errors[] = $bbmEbooks[$idEbookBBM]['name'];
 
-			   		//Remover do carrinho
+			   		//Remove from Shopping Cart
 
 			   		Db::getInstance()->execute('
 						DELETE FROM '._DB_PREFIX_.'cart_product
@@ -998,10 +998,10 @@ class Bibliomundi extends Module
 	}
 
 /**
- * Esse dois hooks, abaixo, juntos sao necessarios para 
+ * The two hooks below, together are necessary for: 
  * 
- * No hook ActionBeforeCartUpdateQty eu consigo saber se foi adicao ou subtracao do produto, se o mesmo ja esta o carrinho
- * No hook ActionCartSave, que eh executado depois da adicao ou subtracao, eu deleto ou atualizo o produto
+ * ActionBeforeCartUpdateQty hook, defines if a Product was Added, Romoved or it is located in the Cart
+ * ActionCartSave hook, is executed when a Product is Added, Remvoed, Deleted or Updated.
  * 
  */
 	public function hookActionCartSave()
@@ -1010,7 +1010,7 @@ class Bibliomundi extends Module
 		{
 			switch($this->cartErrorNumber)
 			{
-				//Talvez seja necessario algo mais que simplesmente fazer estes simples delete e update
+				//It might be required to create na alternative than this simple Delete and Update
 				case 1 :
 					Db::getInstance()->execute('
 						DELETE FROM '._DB_PREFIX_.'cart_product
@@ -1036,17 +1036,17 @@ class Bibliomundi extends Module
 		$this->{'cartParams'} = $params;
 		$this->{'cartErrorNumber'} = null;
 		
-		//1 - O produto eh nosso, nao esta no carrinho e quantidade adicionada eh maior que 1
-		//2 - O produto eh nosso, já esta no carrinho e a operacao eh adição
+		//1- Product is Bibliomundi´s, it is not in the Shopping Cart and its quantity is greater than 1
+		//2 - Product is Bibliomundi´s, it is already in the Shopping Cart and operation is addition
 		
 		if($bbmIdProduct = MYProduct::getIDBBMByID($this->cartParams['product']->id))
 		{
 			$isInCart = $this->cartParams['cart']->containsProduct($this->cartParams['product']->id);
 
-			//Regra 1
+			//Rule 1
 			if(!$isInCart && $this->cartParams['quantity'] > 1)
 				$this->cartErrorNumber = 1;
-			//Regra 2
+			//Rule 2
 			else if($isInCart && $this->cartParams['operator'] == 'up')
 				$this->cartErrorNumber = 2;
 		}
@@ -1091,56 +1091,10 @@ class Bibliomundi extends Module
 		return true;
 	}
 
-	//Remove tudo que é nosso da base dados
+	//Deletes all Bibliomundi additions from the Database
 	private function deleteFromDB()
 	{
 		$categories = Db::getInstance()->executeS('SELECT id_category FROM ' . _DB_PREFIX_ . 'category WHERE is_bbm IS NOT NULL');					
-		$products   = Db::getInstance()->executeS('SELECT id_product  FROM ' . _DB_PREFIX_ . 'product  WHERE is_bbm IS NOT NULL');//Os produtos se encarregam de deletar as tags
+		$products   = Db::getInstance()->executeS('SELECT id_product  FROM ' . _DB_PREFIX_ . 'product  WHERE is_bbm IS NOT NULL');//Products are responsible for deleting Tags
 
 		$category = new Category();
-		$product  = new Product();
-		$feature  = new Feature();
-
-		if(count($categories))
-			$category->deleteSelection(array_map(function($category){return $category['id_category'];}, $categories));//Eh retornado um array multidimensonal, portanto essa bizarrice
-
-		if(count($products))
-			$product->deleteSelection(array_map(function($product){return $product['id_product'];},$products));//Idem
-
-		$feature->deleteSelection(
-			array
-			(
-				$this->featureIDISBN, 
-				$this->featureIDPublisherName,
-				$this->featureIDFormatType,
-				$this->featureIDEditionNumber,
-				$this->featureIDIdiom,
-				$this->featureIDPagesNumber,
-				$this->featureIDProtectionType,
-				$this->featureIDAgeRating,
-				$this->featureIDCollectionTitle,
-				$this->featureIDAutor,
-				$this->featureIDIlustrador
-			)
-		);
-
-		Db::getInstance()->delete('configuration',"name LIKE 'BBM_%'");
-
-		Db::getInstance()->execute('ALTER TABLE ' . _DB_PREFIX_ . 'product DROP COLUMN bbm_id_product, DROP COLUMN is_bbm');
-		
-		Db::getInstance()->execute('ALTER TABLE ' . _DB_PREFIX_ . 'category DROP COLUMN bbm_id_category, DROP COLUMN is_bbm');
-
-		return true;
-	}
-
-	public function writeLog()
-	{
-		$fp = fopen(dirname(__FILE__) . "/log/{$this->operationAlias[$this->operation]}.txt", 'a');
-
-	    fwrite($fp, date('Y-m-d H:i:s') . ' - ' . $this->msgLog . "\n");
-
-	    fclose($fp);
-	}
-	
-}
-
