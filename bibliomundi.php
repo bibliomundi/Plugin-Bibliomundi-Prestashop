@@ -110,6 +110,10 @@ class Bibliomundi extends Module
 		return true;
 	}
 
+	private function writeLog()
+	{
+	}
+	
 	private function setConfig()
 	{
 		/* These are the only values that may be updated after insatallation */
@@ -183,6 +187,15 @@ class Bibliomundi extends Module
 	//Core of Module!
 	public function proccess()
 	{
+		$result = array(
+			'status' => 'in progress'
+		);
+		
+		$lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
+		ftruncate($lock, 0);
+		fwrite($lock, json_encode($result));
+		fclose($lock);
+		
 		try
 		{
 			set_time_limit(0);//Avoids timeout, considering there will be a number of operations
@@ -194,10 +207,21 @@ class Bibliomundi extends Module
 
 			if(!$productsAvailable = $parser->getOnix()->getProductsAvailable())
 				throw new Exception("Não há ebooks para importar!");
-			
+
+			$result['total'] = count($productsAvailable);
+			$result['current'] = 0;
+
 			//Be it Complete or Update, it will all be here!	
 			foreach($productsAvailable as $bbmProduct)
 			{
+				$result['current'] = $result['current'] + 1;
+				{
+					$lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
+					ftruncate($lock, 0);
+					fwrite($lock, json_encode($result));
+					fclose($lock);
+				}
+				
 				//d($bbmProduct);
 				$product = new MYProduct();
 
@@ -440,15 +464,29 @@ class Bibliomundi extends Module
 				//throw new Exception("Error Processing Request", 1);
 				
 			}
+			
+			$result['status'] = 'complete';
+			$result['content'] = $this->l('operação realizada com sucesso!');
 		}
 		catch(Exception $e)
 		{
+			$result['status'] = 'error';
+			$result['content'] = $e->getMessage();
+			
 			throw $e;
+		}
+		finally
+		{
+			$lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
+			ftruncate($lock, 0);
+			fwrite($lock, json_encode($result));
+			fclose($lock);
 		}
 	}
 
 	public function getContent()
 	{
+		$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']);
 		$output = '';
 
 		//When the initial definition  form is issued (For now, only the addition of Authors)
@@ -480,14 +518,94 @@ class Bibliomundi extends Module
 
 	        	try
 	        	{
- 					$this->proccess();
+					$result = array('status' => 'free');
+					
+					if (file_exists(dirname(__FILE__).'/log/import.lock'))
+					{
+						$result = json_decode(file_get_contents(dirname(__FILE__).'/log/import.lock'));
+						if ($result->status == 'in progress') {
+							if (time() - filemtime(dirname(__FILE__).'/log/import.lock') > 5)
+							{
+								unlink(dirname(__FILE__).'/log/import.lock');
+								// restart
+							}
+							else
+							{
+								header('Content-Type: application/json; charset=utf-8');
+								echo json_encode(array(
+									'status' => 'in progress',
+									'output' => 'Successfully'
+								));
+								exit;
+							}
+						}
+					}
+					
+					if($isAjax)
+					{
+						$post_data = array(
+							'clientID' => $this->clientID,
+							'clientSecret' => $this->clientSecret,
+							'operation' => $this->operation,
+							'environment' => $this->environment
+						);
+						
+						foreach ($post_data as $key => &$val) {
+						  if (is_array($val)) $val = implode(',', $val);
+							$post_params[] = $key.'='.urlencode($val);
+						}
+						
+						$post_string = implode('&', $post_params);
 
- 					$output .= $this->displayConfirmation($this->l('Operação realizada com sucesso!'));
+						$parts=parse_url($_SERVER['HTTP_ORIGIN']);
+
+						$fp = fsockopen($parts['host'],
+							isset($parts['port'])?$parts['port']:80,
+							$errno, $errstr, 30);
+
+						$out = "POST /modules/bibliomundi/bibliomundi-import.php HTTP/1.1\r\n";
+						$out.= "Host: ".$_SERVER['HTTP_HOST']."\r\n";
+						$out.= "Cookie: ".$_SERVER['HTTP_COOKIE']."\r\n";
+						$out.= "User-Agent: ".$_SERVER['HTTP_USER_AGENT']."\r\n";
+						$out.= "Content-Type: application/x-www-form-urlencoded\r\n";
+						$out.= "Content-Length: ".strlen($post_string)."\r\n";
+						$out.= "Connection: Close\r\n\r\n";
+						if (isset($post_string)) $out.= $post_string;
+
+						fwrite($fp, $out);
+						fclose($fp);
+
+						header('Content-Type: application/json; charset=utf-8');
+						echo json_encode(array(
+							'status' => 'in progress',
+							'output' => 'Successfully'
+						));
+					}
+					else
+					{
+						$this->proccess();
+						
+						$output .= $this->displayconfirmation($this->l('operação realizada com sucesso!'));
+					}
 	        	}
 	        	catch(Exception $e)
 	        	{
 	        		$this->{'msgLog'} = $e->getMessage();
-	        		$output .= $this->displayError($this->l($e->getMessage()));
+					
+					if ($isAjax)
+					{
+						$output .= $e->getMessage();
+						
+						header('Content-Type: application/json; charset=utf-8');
+						echo json_encode(array(
+							'status' => 'error',
+							'output' => $output
+						));
+					}
+					else
+					{
+						$output .= $this->displayError($this->l($e->getMessage()));
+					}
 	        	}
 	        	
         		$this->writeLog();
@@ -495,6 +613,8 @@ class Bibliomundi extends Module
 	        }
 	    }
 
+		if ($isAjax) exit;
+		
 	    return $output .= $this->displayForm();
 	}
 
@@ -813,7 +933,11 @@ class Bibliomundi extends Module
 	    else if($this->environment == 2)
 	    	$helper->fields_value['environment'] = 2;
 
-	    $html = '<h2>Atenção! A importação pode demorar vários minutos</h2>';
+		$html = '<script src="/js/jquery/plugins/blockui/jquery.blockUI.js"></script>
+		<script src="/modules/bibliomundi/app.js"></script>
+		<div id="import-blocker" style="display: none"><div id="loading"></div></div>';
+		
+	    $html = $html . '<h2>Atenção! A importação pode demorar vários minutos</h2>';
 
 	    return $html . $helper->generateForm($fields_form);
 	}
