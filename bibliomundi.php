@@ -109,10 +109,6 @@ class Bibliomundi extends Module
 	  
 		return true;
 	}
-
-	private function writeLog()
-	{
-	}
 	
 	private function setConfig()
 	{
