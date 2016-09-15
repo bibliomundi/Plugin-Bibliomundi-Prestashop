@@ -471,13 +471,12 @@ class Bibliomundi extends Module
 			
 			throw $e;
 		}
-		finally
-		{
-			$lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
-			ftruncate($lock, 0);
-			fwrite($lock, json_encode($result));
-			fclose($lock);
-		}
+		
+		$lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
+		ftruncate($lock, 0);
+		fwrite($lock, json_encode($result));
+		fclose($lock);
+		
 	}
 
 	public function getContent()
