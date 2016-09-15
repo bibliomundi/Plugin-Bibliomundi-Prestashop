@@ -1262,3 +1262,4 @@ class Bibliomundi extends Module
 
 	    fclose($fp);
 	}
+}
