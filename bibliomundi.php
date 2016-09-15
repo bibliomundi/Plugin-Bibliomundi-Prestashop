@@ -1218,7 +1218,51 @@ class Bibliomundi extends Module
 	//Deletes all Bibliomundi additions from the Database
 	private function deleteFromDB()
 	{
-		$categories = Db::getInstance()->executeS('SELECT id_category FROM ' . _DB_PREFIX_ . 'category WHERE is_bbm IS NOT NULL');					
+		$categories = Db::getInstance()->executeS('SELECT id_category FROM ' . _DB_PREFIX_ . 'category WHERE is_bbm IS NOT NULL');	
 		$products   = Db::getInstance()->executeS('SELECT id_product  FROM ' . _DB_PREFIX_ . 'product  WHERE is_bbm IS NOT NULL');//Products are responsible for deleting Tags
 
 		$category = new Category();
+		$product  = new Product();
+		$feature  = new Feature();
+
+		if(count($categories))
+			$category->deleteSelection(array_map(function($category){return $category['id_category'];}, $categories));//Returns multidimentional Array
+
+		if(count($products))
+			$product->deleteSelection(array_map(function($product){return $product['id_product'];},$products));//Ditto
+
+		$feature->deleteSelection
+		(
+			array
+			(
+				$this->featureIDISBN, 
+				$this->featureIDPublisherName,
+				$this->featureIDFormatType,
+				$this->featureIDEditionNumber,
+				$this->featureIDIdiom,
+				$this->featureIDPagesNumber,
+				$this->featureIDProtectionType,
+				$this->featureIDAgeRating,
+				$this->featureIDCollectionTitle,
+				$this->featureIDAutor,
+				$this->featureIDIlustrador
+			)
+		);
+
+		Db::getInstance()->delete('configuration',"name LIKE 'BBM_%'");
+
+		Db::getInstance()->execute('ALTER TABLE ' . _DB_PREFIX_ . 'product DROP COLUMN bbm_id_product, DROP COLUMN is_bbm');
+		
+		Db::getInstance()->execute('ALTER TABLE ' . _DB_PREFIX_ . 'category DROP COLUMN bbm_id_category, DROP COLUMN is_bbm');
+
+		return true;
+	}
+
+	public function writeLog()
+	{
+		$fp = fopen(dirname(__FILE__) . "/log/{$this->operationAlias[$this->operation]}.txt", 'a');
+
+	    fwrite($fp, date('Y-m-d H:i:s') . ' - ' . $this->msgLog . "\n");
+
+	    fclose($fp);
+	}
