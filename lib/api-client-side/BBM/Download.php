@@ -139,24 +139,28 @@ class Download extends Connect
         // SET THE HEADERS, IF YOU WANT TO PUT ANOTHER NAME TO THE FILE,
         // HERE IS THE PLACE
 
-        if(strpos($request->__toString(), "urn:uuid:") == -1)
+        if(!$this->verbose)
         {
-            header('Content-Type: application/epub+zip');
-            header('Content-Disposition: attachment; filename="'.md5(time()).'.epub"');
-        }
-        else
-        {
-            header('Content-Type: application/vnd.adobe.adept+xml');
-            header('Content-Disposition: attachment; filename="'.md5(time()).'.acsm"');
-        }
+            if(!strpos($request->__toString(), "urn:uuid:"))
+            {
+                header('Content-Type: application/epub+zip');
+                header('Content-Disposition: attachment; filename="'.md5(time()).'.epub"');
+            }
+            else
+            {
+                header('Content-Type: application/vnd.adobe.adept+xml');
+                header('Content-Disposition: attachment; filename="'.md5(time()).'.acsm"');
+            }
 
-        header("Content-Transfer-Encoding: binary");
-        header('Expires: 0');
-        header('Pragma: no-cache');
-        header("Content-Length: ".strlen($request));
+            header("Content-Transfer-Encoding: binary");
+            header('Expires: 0');
+            header('Pragma: no-cache');
+            header("Content-Length: ".strlen($request));
 
-        // EXIT THE PROGRAM WITH THE BINARY REQUEST.
-        exit($request);
+            // EXIT THE PROGRAM WITH THE BINARY REQUEST.
+            $request = utf8_decode($request->__toString());
+            exit($request);
+        }
     }
 
 }

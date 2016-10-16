@@ -169,12 +169,13 @@ class Purchase extends Connect
      * Add new itens to the bundle that will be saved.
      * @param $bibliomundiEbookID
      * @param $price
+     * @param $currency array['BRL', 'USD', 'EUR', 'GBP']
      *
      * @throws Exception
      */
-    public function addItem($bibliomundiEbookID, $price)
+    public function addItem($bibliomundiEbookID, $price, $currency)
     {
-        $this->items[] = ['bibliomundiEbookID' => $bibliomundiEbookID, 'price' => $price];
+        $this->items[] = ['bibliomundiEbookID' => $bibliomundiEbookID, 'price' => $price, 'currency' => $currency];
     }
 
     /**
