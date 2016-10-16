@@ -1009,7 +1009,7 @@ class Bibliomundi extends Module
 
 				foreach ($bbmEbooks as $key => $ebook) 
 				{
-					$purchase->addItem($key, $ebook['price']);//Bibliomundi ID and Price
+					$purchase->addItem($key, $ebook['price'], 'BRL');//Bibliomundi ID and Price
 				}
 
 				$purchase->validate();
@@ -1072,7 +1072,7 @@ class Bibliomundi extends Module
 
 				foreach ($bbmEbooks as $key => $ebook) 
 				{
-					$purchase->addItem($key, $ebook['price']);//Bibliomundi ID and Price
+					$purchase->addItem($key, $ebook['price'], 'BRL');//Bibliomundi ID and Price
 				}
 
 				$purchase->validate();
