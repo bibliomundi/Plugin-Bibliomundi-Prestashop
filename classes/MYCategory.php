@@ -1,4 +1,20 @@
 <?php
+/**
+* 2007-2015 PrestaShop
+*
+* NOTICE OF LICENSE
+*
+* This file is licenced under the Software License Agreement.
+* With the purchase or the installation of the software in your application
+* you accept the licence agreement.
+*
+* You must not modify, adapt or create derivative works of this source code
+*
+*  @author    Carlos Magno <cmagnosoares@gmail.com>
+*  @copyright 2007-2015 PrestaShop SA
+*  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+*/
+
 class MYCategory extends CategoryCore
 {
 	/*
@@ -137,15 +153,15 @@ class MYCategory extends CategoryCore
     */
     public static function getIDByIDBBM($idBBM)
     {
-        $sql = "SELECT id_category FROM " . _DB_PREFIX_ . "category WHERE bbm_id_category = '{$idBBM}' AND is_bbm IS NOT NULL";
-        
+        $sql = "SELECT `id_category` FROM `" . _DB_PREFIX_ . "category` WHERE `bbm_id_category` = '" . pSQL((int)$idBBM) . "' AND `is_bbm` IS NOT NULL";
+    
         return Db::getInstance()->getValue($sql);
     }
 
     public static function getIDBBMByID($idCategory)
     {
-        $sql = "SELECT bbm_id_category FROM " . _DB_PREFIX_ . "product WHERE id_category = {$idCategory} AND is_bbm IS NOT NULL";
-        
+        $sql = "SELECT `bbm_id_category` FROM `" . _DB_PREFIX_ . "product` WHERE `id_category` = '" . pSQL((int)$idCategory) . "' AND `is_bbm` IS NOT NULL";
+    
         return Db::getInstance()->getValue($sql);
     }
 }

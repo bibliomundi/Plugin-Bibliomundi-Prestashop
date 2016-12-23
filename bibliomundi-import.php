@@ -1,5 +1,5 @@
 <?php
-/*
+/**
 * 2007-2015 PrestaShop
 *
 * NOTICE OF LICENSE
@@ -18,10 +18,9 @@
 * versions in the future. If you wish to customize PrestaShop for your
 * needs please refer to http://www.prestashop.com for more information.
 *
-*  @author Carlos Magno <cmagnosoares@gmail.com>
-*  @copyright  2007-2015 PrestaShop SA
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
+*  @author    Carlos Magno <cmagnosoares@gmail.com>
+*  @copyright 2007-2015 PrestaShop SA
+*  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 */
 
 include(dirname(__FILE__).'/../../config/config.inc.php');
@@ -37,23 +36,18 @@ if (!$cookie->isLoggedBack())
 	exit;
 }
 
-if (!isset($_GET['action']) || $_GET['action'] != 'status') {
+if (!Tools::getIsset(Tools::getValue('action'))) {
 	$bbm = new Bibliomundi();//Instancia o Módulo
-	$bbm->clientID = $_POST['clientID'];
-	$bbm->clientSecret = $_POST['clientSecret'];
-	$bbm->operation = $_POST['operation'];
-	$bbm->environment = $_POST['environment'];
+	$bbm->clientID = Configuration::get('BBM_OPTION_CLIENT_ID');
+	$bbm->clientSecret = Configuration::get('BBM_OPTION_CLIENT_SECRET');
+	$bbm->operation = Configuration::get('BBM_OPTION_OPERATION');
+	$bbm->environment = Configuration::get('BBM_OPTION_ENVIRONMENT');
 
-	try
-	{
+	if(Tools::getValue('action') == 'proccess') {
 		$bbm->proccess();
 	}
-	catch(Exception $e)
-	{
-		//throw $e;
+	
+	if(Tools::getValue('action') == 'valid') {
+		$bbm->ajax_valid();
 	}
-
 }
-
-header('Content-type: application/json');
-echo file_get_contents(dirname(__FILE__).'/log/import.lock');

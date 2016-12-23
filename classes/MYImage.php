@@ -1,4 +1,20 @@
 <?php
+/**
+* 2007-2015 PrestaShop
+*
+* NOTICE OF LICENSE
+*
+* This file is licenced under the Software License Agreement.
+* With the purchase or the installation of the software in your application
+* you accept the licence agreement.
+*
+* You must not modify, adapt or create derivative works of this source code
+*
+*  @author    Carlos Magno <cmagnosoares@gmail.com>
+*  @copyright 2007-2015 PrestaShop SA
+*  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+*/
+
 class MYImage extends ImageCore
 {
     public function __construct($id = null, $id_lang = null)
@@ -74,18 +90,17 @@ class MYImage extends ImageCore
             $images_types = ImageType::getImagesTypes($entity, true);
 
             if ($regenerate) {
-                $previous_path = null;
                 $path_infos = array();
                 $path_infos[] = array($tgt_width, $tgt_height, $path.'.jpg');
                 foreach ($images_types as $image_type) {
                     $tmpfile = self::get_best_path($image_type['width'], $image_type['height'], $path_infos);
 
-                    if (ImageManager::resize($tmpfile, $path.'-'.stripslashes($image_type['name']).'.jpg', $image_type['width'],
+                    if (ImageManager::resize($tmpfile, $path.'-'.Tools::stripslashes($image_type['name']).'.jpg', $image_type['width'],
                                          $image_type['height'], 'jpg', false, $error, $tgt_width, $tgt_height, 5,
                                          $src_width, $src_height)) {
                         // the last image should not be added in the candidate list if it's bigger than the original image
                         if ($tgt_width <= $src_width && $tgt_height <= $src_height) {
-                            $path_infos[] = array($tgt_width, $tgt_height, $path.'-'.stripslashes($image_type['name']).'.jpg');
+                            $path_infos[] = array($tgt_width, $tgt_height, $path.'-'.Tools::stripslashes($image_type['name']).'.jpg');
                         }
                         if ($entity == 'products') {
                             if (is_file(_PS_TMP_IMG_DIR_.'product_mini_'.(int)$id_entity.'.jpg')) {
@@ -120,10 +135,5 @@ class MYImage extends ImageCore
             }
         }
         return $path;
-    }
-
-    public static function isBBM(Image $image)
-    {
-        
     }
 }

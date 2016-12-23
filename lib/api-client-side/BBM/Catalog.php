@@ -112,6 +112,33 @@ class Catalog extends Connect
         return true;
     }
 
+    public function ajax_validate()
+    {
+        $this->data = ['transaction_time' => time()];
+
+        try
+        {
+            // IF NO EXCEPTION IS THROWN BEFORE, THE REQUEST CAN BE SENT, SO
+            // HERE WE GET THE ACCESS TOKEN FOR THIS DOWNLOAD REQUEST.
+            $request = new Server\Request(Server\Config\SysConfig::$BASE_CONNECT_URI . 'token.php', $this->verbose);
+            $request->authenticate(true, $this->clientId, $this->clientSecret);
+            $request->create();
+            $request->setPost(['grant_type' => Server\Config\SysConfig::$GRANT_TYPE, 'environment' => $this->environment]);
+            $response = json_decode($request->ajax_execute());
+
+            if(isset($response->error))
+                return array('error' => $response->error);
+
+            if(!isset($response->access_token))
+                return array('error' => 'Cannot get the access token');
+        }
+        catch(Exception $e)
+        {
+            return json_encode($e);
+        }
+        return array('error' => '');
+    }
+
     /**
      * This function will add filters to your search, you will be able to send only
      * the filters that we expect to:

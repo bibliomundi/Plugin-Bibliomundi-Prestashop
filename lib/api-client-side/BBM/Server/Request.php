@@ -243,8 +243,23 @@ class Request
 
         if($this->isSuccessfullRequest())
             return $this->_return;
+        else{
+            throw new Exception(@$this->_readableReturn['error_description'], $this->_status);
+        }
+    }
+
+    public function ajax_execute()
+    {        
+        $this->_return = curl_exec($this->curlHandler);
+        $this->_readableReturn = json_decode($this->_return, true);
+
+        $this->_status = curl_getinfo($this->curlHandler,CURLINFO_HTTP_CODE);
+        curl_close($this->curlHandler);
+
+        if($this->isSuccessfullRequest())
+            return $this->_return;
         else
-            throw new Exception($this->getResponse(), $this->getHttpStatus());
+            return json_encode(array('error' => @$this->_readableReturn['error_description']));
     }
 
     private function isSuccessfullRequest()

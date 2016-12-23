@@ -1,5 +1,5 @@
 <?php
-/*
+/**
 * 2007-2015 PrestaShop
 *
 * NOTICE OF LICENSE
@@ -18,10 +18,9 @@
 * versions in the future. If you wish to customize PrestaShop for your
 * needs please refer to http://www.prestashop.com for more information.
 *
-*  @author Carlos Magno <cmagnosoares@gmail.com>
-*  @copyright  2007-2015 PrestaShop SA
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
+*  @author    Carlos Magno <cmagnosoares@gmail.com>
+*  @copyright 2007-2015 PrestaShop SA
+*  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 */
 
 if (!defined('_PS_VERSION_'))
@@ -65,24 +64,21 @@ class Bibliomundi extends Module
 	public function __construct()
 	{
 		$this->name = 'bibliomundi';
-		$this->version = '1.0';
+		$this->version = '1.0.0';
 		$this->author = 'Bibliomundi';
-
-		$this->displayName = $this->l('Integração com os ebooks da Bibliomundi');
-    	$this->description = $this->l('Distruibuidora de livros digitais.');
-
+		$this->tab = 'others';
+		$this->displayName = $this->l('Integration with Bibliomundi ebooks');
+    	$this->description = $this->l('Digital book distributor.');
+    	$this->module_key = 'ce2baff2d6e63819c47e7af943a5d702';
     	$this->ps_versions_compliancy = array('min' => '1.6');
-
-    	$this->confirmUninstall = $this->l('Você tem certeza que deseja desinstalar o nosso módulo?');
-
-
+    	$this->confirmUninstall = $this->l('Are you sure you want to uninstall our module?');
 		$this->bootstrap = true;
-
 		parent::__construct();
-
 		$this->loadFiles();
-		
 		$this->getConfig();
+
+		$this->context->controller->addJS($this->_path.'views/js/app.js');
+		$this->context->controller->addJS('/js/jquery/plugins/blockui/jquery.blockUI.js');
 	}
 
 	public function install()
@@ -100,6 +96,54 @@ class Bibliomundi extends Module
 	    	return false;
 
  		return true;
+	}
+
+	public function createCategories() {
+
+	    $arrCategories = array();
+	    $arrSubCategories = array();
+
+	    $file = fopen(_PS_MODULE_DIR_.$this->name.'/bisac_categories.csv', 'r');
+		while (($line = fgetcsv($file, 1000, ';')) !== FALSE) {
+			if(!is_numeric($line[0])){
+				$arrKey = $line;
+			}else{
+				$arrCategories[] = array_combine($arrKey, $line);
+			}
+		}
+		fclose($file);
+
+		$file = fopen(_PS_MODULE_DIR_.$this->name.'/bisac_subcategories.csv', 'r');
+		while (($line = fgetcsv($file, 1000, ';')) !== FALSE) {
+			if(!is_numeric($line[0])){
+				$arrKey = $line;
+			}else{
+				$arrSubCategories[$line[1]][] = array_combine($arrKey, $line);
+			}
+		}
+		fclose($file);
+
+		$cat = $subCat = new MYCategory();
+
+        foreach ($arrCategories as $category) {
+
+        	$cat->is_bbm = true;
+        	$cat->bbm_id_category = $category['bisac_code'];
+        	$cat->id_parent = Category::getRootCategory()->id;
+        	$cat->name[(int)Configuration::get('PS_LANG_DEFAULT')] = $category['bisac_description'];
+        	$cat->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite($category['description_eng']);
+        	$cat->add();
+
+        	foreach ($arrSubCategories[$category['id']] as $subCategories) {
+
+        		$subCat->is_bbm = true;
+        		$subCat->bbm_id_category = $subCategories['code'];
+        		$subCat->id_parent = (int)$cat->id;
+        		$subCat->name[(int)Configuration::get('PS_LANG_DEFAULT')] = $subCategories['description_ptbr'];
+	        	$subCat->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite($subCategories['description_en']);
+	        	$subCat->add();
+        	}
+        }
 	}
 
 	public function uninstall()
@@ -180,6 +224,14 @@ class Bibliomundi extends Module
 		}
 	}
 
+	public function ajax_valid()
+	{
+		$catalog = new BBM\Catalog($this->clientID, $this->clientSecret, $this->operationAlias[$this->operation]);
+		$catalog->environment = $this->environmentAlias[$this->environment];
+	    echo Tools::jsonEncode($catalog->ajax_validate());
+		die;
+	}
+
 	//Core of Module!
 	public function proccess()
 	{
@@ -189,7 +241,7 @@ class Bibliomundi extends Module
 		
 		$lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
 		ftruncate($lock, 0);
-		fwrite($lock, json_encode($result));
+		fwrite($lock, Tools::jsonEncode($result));
 		fclose($lock);
 		
 		try
@@ -202,7 +254,7 @@ class Bibliomundi extends Module
 			//d($parser->getOnix()->getProductsAvailable());
 
 			if(!$productsAvailable = $parser->getOnix()->getProductsAvailable())
-				throw new Exception("Não há ebooks para importar!");
+				throw new Exception("There are no ebooks to import!");
 
 			$result['total'] = count($productsAvailable);
 			$result['current'] = 0;
@@ -214,7 +266,7 @@ class Bibliomundi extends Module
 				{
 					$lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
 					ftruncate($lock, 0);
-					fwrite($lock, json_encode($result));
+					fwrite($lock, Tools::jsonEncode($result));
 					fclose($lock);
 				}
 				
@@ -462,7 +514,7 @@ class Bibliomundi extends Module
 			}
 			
 			$result['status'] = 'complete';
-			$result['content'] = $this->l('operação realizada com sucesso!');
+			$result['content'] = $this->l('Successful operation!');
 		}
 		catch(Exception $e)
 		{
@@ -474,7 +526,7 @@ class Bibliomundi extends Module
 		
 		$lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
 		ftruncate($lock, 0);
-		fwrite($lock, json_encode($result));
+		fwrite($lock, Tools::jsonEncode($result));
 		fclose($lock);
 		
 	}
@@ -495,21 +547,21 @@ class Bibliomundi extends Module
 					Configuration::updateValue('BBM_AUTOR_INSERT_TYPE', Tools::getValue('autor_insert_type'));
 			}
 			else
-				$output .= $this->displayError($this->l('Tipo de autor inválido!'));
+				$output .= $this->displayError($this->l('Invalid author type!'));
 
 		}
 		else if (Tools::isSubmit('submit' . $this->name . 'operation'))
 	    {
 	        if (!Tools::getValue('client_id') || !Tools::getValue('client_secret'))
-	            $output .= $this->displayError($this->l('Chave de identificação ou Chave Secreta não preencidos!'));
+	            $output .= $this->displayError($this->l('Unidentified ID Key or Secret Key!'));
 	        else if(!in_array(Tools::getValue('operation'), array('1', '2')) || !in_array(Tools::getValue('environment'), array('1', '2')))
-	        	$output .= $this->displayError($this->l('Tipo de Operação ou ambiente inválidos!'));
+	        	$output .= $this->displayError($this->l('Invalid Operation Type or Environment!'));
 	        else
 	        {
-	        	$this->clientID       = strval(Tools::getValue('client_id'));
-		        $this->clientSecret   = strval(Tools::getValue('client_secret'));
-		        $this->operation 	  = strval(Tools::getValue('operation'));
-		        $this->environment    = strval(Tools::getValue('environment'));
+	        	$this->clientID       = (string)Tools::getValue('client_id');
+		        $this->clientSecret   = (string)Tools::getValue('client_secret');
+		        $this->operation 	  = (string)Tools::getValue('operation');
+		        $this->environment    = (string)Tools::getValue('environment');
 
 	        	try
 	        	{
@@ -517,7 +569,7 @@ class Bibliomundi extends Module
 					
 					if (file_exists(dirname(__FILE__).'/log/import.lock'))
 					{
-						$result = json_decode(file_get_contents(dirname(__FILE__).'/log/import.lock'));
+						$result = Tools::jsonDecode(Tools::file_get_contents(dirname(__FILE__).'/log/import.lock'));
 						if ($result->status == 'in progress') {
 							if (time() - filemtime(dirname(__FILE__).'/log/import.lock') > 5)
 							{
@@ -527,7 +579,7 @@ class Bibliomundi extends Module
 							else
 							{
 								header('Content-Type: application/json; charset=utf-8');
-								echo json_encode(array(
+								echo Tools::jsonEncode(array(
 									'status' => 'in progress',
 									'output' => 'Successfully'
 								));
@@ -544,7 +596,7 @@ class Bibliomundi extends Module
 							'operation' => $this->operation,
 							'environment' => $this->environment
 						);
-						
+						$post_params = array();
 						foreach ($post_data as $key => &$val) {
 						  if (is_array($val)) $val = implode(',', $val);
 							$post_params[] = $key.'='.urlencode($val);
@@ -552,7 +604,7 @@ class Bibliomundi extends Module
 						
 						$post_string = implode('&', $post_params);
 
-						$parts=parse_url($_SERVER['HTTP_ORIGIN']);
+						$parts = parse_url($_SERVER['HTTP_ORIGIN']);
 
 						$fp = fsockopen($parts['host'],
 							isset($parts['port'])?$parts['port']:80,
@@ -563,7 +615,7 @@ class Bibliomundi extends Module
 						$out.= "Cookie: ".$_SERVER['HTTP_COOKIE']."\r\n";
 						$out.= "User-Agent: ".$_SERVER['HTTP_USER_AGENT']."\r\n";
 						$out.= "Content-Type: application/x-www-form-urlencoded\r\n";
-						$out.= "Content-Length: ".strlen($post_string)."\r\n";
+						$out.= "Content-Length: ".Tools::strlen($post_string)."\r\n";
 						$out.= "Connection: Close\r\n\r\n";
 						if (isset($post_string)) $out.= $post_string;
 
@@ -571,7 +623,7 @@ class Bibliomundi extends Module
 						fclose($fp);
 
 						header('Content-Type: application/json; charset=utf-8');
-						echo json_encode(array(
+						echo Tools::jsonEncode(array(
 							'status' => 'in progress',
 							'output' => 'Successfully'
 						));
@@ -580,7 +632,7 @@ class Bibliomundi extends Module
 					{
 						$this->proccess();
 						
-						$output .= $this->displayconfirmation($this->l('operação realizada com sucesso!'));
+						$output .= $this->displayconfirmation($this->l('Successful operation!'));
 					}
 	        	}
 	        	catch(Exception $e)
@@ -592,7 +644,7 @@ class Bibliomundi extends Module
 						$output .= $e->getMessage();
 						
 						header('Content-Type: application/json; charset=utf-8');
-						echo json_encode(array(
+						echo Tools::jsonEncode(array(
 							'status' => 'error',
 							'output' => $output
 						));
@@ -709,21 +761,21 @@ class Bibliomundi extends Module
 	{
 		// Get default language
 	    $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
-
+	    $fields_form = array();
 		$fields_form[0]['form'] = array(
-	        // 'legend' => array(
-	        //     'title' => $this->l('Tipo'), 
-	        // ),
+	        'legend' => array(
+	            'title' => $this->l('Configuration'), 
+	        ),
 	        'input' => array
 	        (
            		array
            		(
 				  'type'      => 'radio',                               
-				  'label'     => $this->l('Inserir Autores como: '),       
-				  'desc'      => $this->l('Mesmo ao optar por "Nenhum" ainda sim os Autores serão associados, aos ebooks, através das "customs features", tornando-os possíveis de serem exibidos na página do produto.'),   
-				  'name'      => 'autor_insert_type',                             
-				  'required'  => true,                                  
-				  'class'     => 't',                                   
+				  'label'     => $this->l('Insert Authors as: '),       
+				  'desc'      => $this->l('Even when opting for "None", authors will still be associated with ebooks through "customs features", making them possible to be displayed on the product page.'),   
+				  'name'      => 'autor_insert_type',
+				  'class'     => 't',                             
+				  'required'  => true,                                                                  
 				  'is_bool'   => false,                                 
 			  	  'values'    => array
 			  	  (                                 
@@ -737,21 +789,21 @@ class Bibliomundi extends Module
 				    (
 				      'id'    => 'categoria',
 				      'value' => 2,
-				      'label' => $this->l('Categoria')
+				      'label' => $this->l('Category')
 				    ),
 				    array
 				    (
 				      'id'    => 'nenhum',
 				      'value' => 3,
-				      'label' => $this->l('Nenhum')
+				      'label' => $this->l('None')
 				    )
 				  )
 				)
 	        ),
 	        'submit' => array
 	        (
-	            'title' => $this->l('Prosseguir'),
-	            'class' => 'button'
+	            'title' => $this->l('Proceed'),
+	            'class' => 'btn btn-default'
 	        )
     	);
 
@@ -775,7 +827,7 @@ class Bibliomundi extends Module
 	    $helper->toolbar_btn = array(
 	        'save' =>
 		        array(
-		            'desc' => $this->l('Prosseguir'),
+		            'desc' => $this->l('Proceed'),
 		            'href' => AdminController::$currentIndex.'&configure='.$this->name.'&save'.$this->name.
 		            '&token='.Tools::getAdminTokenLite('AdminModules'),
 		        ),
@@ -787,7 +839,7 @@ class Bibliomundi extends Module
 
 	    $helper->fields_value['autor_insert_type'] = 1;//Tag como default
 
-	    $html = '<h2>Informe como deseja que os autores dos nossos ebooks sejam exibidos em sua loja</h2>';
+	    $html = 'Tell us how you want the authors of our ebooks to appear in your store';
 
 	    return $html . $helper->generateForm($fields_form);
 	}
@@ -798,17 +850,18 @@ class Bibliomundi extends Module
 	    $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
 
 		// Init Fields form array
+		$fields_form = array();
 	    $fields_form[0]['form'] = array(
 	        'legend' => array(
-	            'title' => $this->l('Configurações'),
+	            'title' => $this->l('Configuration'),
 	        ),
 	        'input' => array
 	        (
 	            array
 	            (
 	                'type'  	=> 'text',
-	                'label' 	=> $this->l('Chave de Identificação'),
-	                //'desc' 	=> $this->l('Operação'),        
+	                'label' 	=> $this->l('Identification Key'),
+	                // 'desc' 	=> $this->l('Operation'),        
 	                'name'  	=> 'client_id',
 	                'size'  	=> 20,
 	                'required'  => true
@@ -816,7 +869,7 @@ class Bibliomundi extends Module
 	            array
 	            (
 	                'type' 		=> 'text',
-	                'label' 	=> $this->l('Chave Secreta'),
+	                'label' 	=> $this->l('Secret Key'),
 	                'name' 		=> 'client_secret',
 	                'size' 		=> 20,
 	                'required'  => true
@@ -824,8 +877,8 @@ class Bibliomundi extends Module
            		array
            		(
 				  'type'      => 'radio',                               
-				  'label'     => $this->l('Operação'),        
-				  'desc'      => $this->l('Selecione "complete" para importar todos os nossos ebooks e "update" para importar somente os que foram atualizados e/ou removidos ontem.'),  
+				  'label'     => $this->l('Operation'),        
+				  'desc'      => $this->l('Select "complete" to import all our ebooks and "update" to import only those that were updated and / or removed yesterday.'),  
 				  'name'      => 'operation',                              
 				  'required'  => true,                                  
 				  'class'     => 't',                                   
@@ -849,8 +902,8 @@ class Bibliomundi extends Module
 				array
 				(
 				  'type'      => 'radio',                               
-				  'label'     => $this->l('Ambiente'),        
-				  //'desc'      => $this->l('Sandbox para teste e Production pra valer!'), 
+				  'label'     => $this->l('Environment'),        
+				  //'desc'      => $this->l('Sandbox for testing and Production for real!'), 
 				  'name'      => 'environment',                              
 				  'required'  => true,                                  
 				  'class'     => 't',                                   
@@ -861,21 +914,21 @@ class Bibliomundi extends Module
 				    (
 				      'id'    => 'sandbox',                           
 				      'value' => 1,                                   
-				      'label' => $this->l('Teste')                    
+				      'label' => $this->l('Test')                    
 				    ),
 				    array
 				    (
 				      'id'    => 'production',
 				      'value' => 2,
-				      'label' => $this->l('Produção')
+				      'label' => $this->l('Production')
 				    )
 				  ),
 				)
 	        ),
 	        'submit' => array
 	        (
-	            'title' => $this->l('Importar'),
-	            'class' => 'button'
+	            'title' => $this->l('Import'),
+	            'class' => 'btn btn-default'
 	        )
 	    );
      
@@ -927,12 +980,8 @@ class Bibliomundi extends Module
 	    	$helper->fields_value['environment'] = 1;
 	    else if($this->environment == 2)
 	    	$helper->fields_value['environment'] = 2;
-
-		$html = '<script src="/js/jquery/plugins/blockui/jquery.blockUI.js"></script>
-		<script src="/modules/bibliomundi/app.js"></script>
-		<div id="import-blocker" style="display: none"><div id="loading"></div></div>';
 		
-	    $html = $html . '<h2>Atenção! A importação pode demorar vários minutos</h2>';
+	    $html = 'Attention! Importing may take several minutes';
 
 	    return $html . $helper->generateForm($fields_form);
 	}
@@ -940,12 +989,12 @@ class Bibliomundi extends Module
 	//Adds Fields to identify which Product is Bibliomundi´s
 	private function createCustomFieldsToDB()
 	{
-		$sql = 'ALTER TABLE ' . _DB_PREFIX_ . 'product ADD bbm_id_product VARCHAR(10) NULL, ADD is_bbm TINYINT(1) NULL';
+		$sql = 'ALTER TABLE `' . _DB_PREFIX_ . 'product` ADD `bbm_id_product` VARCHAR(10) NULL, ADD `is_bbm` TINYINT(1) NULL';
 
 		if(!Db::getInstance()->Execute($sql))
         	return false;
 
-        $sql = 'ALTER TABLE ' . _DB_PREFIX_ . 'category ADD bbm_id_category VARCHAR(10) NULL, ADD is_bbm TINYINT(1) NULL';
+        $sql = 'ALTER TABLE `' . _DB_PREFIX_ . 'category` ADD `bbm_id_category` VARCHAR(10) NULL, ADD `is_bbm` TINYINT(1) NULL';
 
 		if(!Db::getInstance()->Execute($sql))
         	return false;
@@ -1079,6 +1128,7 @@ class Bibliomundi extends Module
 			}
 			catch(Exception $e)
 			{
+				$errors = array();
 				//Regardless of the error, all ebooks are curretly removed from the basket as the API is not informing what error is the cause.
 				foreach ($bbmEbooks as $ebook)
 				{
@@ -1087,9 +1137,9 @@ class Bibliomundi extends Module
 					//Remove from Shopping Cart
 
 			   		Db::getInstance()->execute('
-						DELETE FROM '._DB_PREFIX_.'cart_product
-						WHERE id_product = '.(int)$ebook['id_product'].'
-						AND id_cart = '.(int)$params['cart']->id. '');
+						DELETE FROM `' . _DB_PREFIX_ . 'cart_product`
+						WHERE `id_product` = ' . pSQL((int)$ebook['id_product']) . '
+						AND `id_cart` = ' . pSQL((int)$params['cart']->id) . '');
 				}
 /*
 				$json = json_decode(str_replace("'", '"', $e->getMessage()));//Temporary Workaround
@@ -1111,7 +1161,7 @@ class Bibliomundi extends Module
 						AND id_cart = '.(int)$params['cart']->id. '');
 			    }*/
 
-				$this->context->controller->errors[] = Tools::displayError('Ocorreu um problema interno com o(s) seguinte(s) ebooks: ' . implode(',', $errors) . '. Removemos do carrinho pra você. Desculpe-nos pelo transtorno!', !Tools::getValue('ajax'));
+				$this->context->controller->errors[] = Tools::displayError('There was an internal problem with the following ebooks: ' . implode(',', $errors) . '. We removed the cart for you. Sorry for the inconvenience!', !Tools::getValue('ajax'));
 			}
 		}
 	}
@@ -1132,21 +1182,21 @@ class Bibliomundi extends Module
 				//It might be required to create na alternative than this simple Delete and Update
 				case 1 :
 					Db::getInstance()->execute('
-						DELETE FROM '._DB_PREFIX_.'cart_product
-						WHERE id_product = '.(int)$this->cartParams['product']->id.'
-						AND id_cart = '.(int)$this->cartParams['cart']->id. '');
+						DELETE FROM `' . _DB_PREFIX_ . 'cart_product`
+						WHERE `id_product` = ' . pSQL((int)$this->cartParams['product']->id) . '
+						AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id) . '');
 				break;
 
 				case 2 :
 					Db::getInstance()->execute('
-						UPDATE '._DB_PREFIX_.'cart_product
-						SET quantity = 1, date_add = NOW()
-						WHERE id_product = '.(int)$this->cartParams['product']->id.'
-						AND id_cart = '.(int)$this->cartParams['cart']->id. '');
+						UPDATE `' . _DB_PREFIX_ . 'cart_product`
+						SET `quantity` = 1, `date_add` = NOW()
+						WHERE `id_product` = ' . pSQL((int)$this->cartParams['product']->id) . '
+						AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id) . '');
 				break;
 			}
 
-			$this->context->controller->errors[] = Tools::displayError("Você não pode comprar mais de 1 unidade do produto \"{$this->cartParams['product']->name}\"", !Tools::getValue('ajax'));
+			$this->context->controller->errors[] = Tools::displayError("You can not purchase more than 1 unit of the product \"{$this->cartParams['product']->name}\"", !Tools::getValue('ajax'));
 		}
 	}
 
@@ -1158,7 +1208,7 @@ class Bibliomundi extends Module
 		//1- Product is Bibliomundi´s, it is not in the Shopping Cart and its quantity is greater than 1
 		//2 - Product is Bibliomundi´s, it is already in the Shopping Cart and operation is addition
 		
-		if($bbmIdProduct = MYProduct::getIDBBMByID($this->cartParams['product']->id))
+		if(MYProduct::getIDBBMByID($this->cartParams['product']->id))
 		{
 			$isInCart = $this->cartParams['cart']->containsProduct($this->cartParams['product']->id);
 
@@ -1213,8 +1263,8 @@ class Bibliomundi extends Module
 	//Deletes all Bibliomundi additions from the Database
 	private function deleteFromDB()
 	{
-		$categories = Db::getInstance()->executeS('SELECT id_category FROM ' . _DB_PREFIX_ . 'category WHERE is_bbm IS NOT NULL');	
-		$products   = Db::getInstance()->executeS('SELECT id_product  FROM ' . _DB_PREFIX_ . 'product  WHERE is_bbm IS NOT NULL');//Products are responsible for deleting Tags
+		$categories = Db::getInstance()->executeS('SELECT `id_category` FROM `' . _DB_PREFIX_ . 'category` WHERE `is_bbm` IS NOT NULL');	
+		$products   = Db::getInstance()->executeS('SELECT `id_product`  FROM `' . _DB_PREFIX_ . 'product`  WHERE `is_bbm` IS NOT NULL');//Products are responsible for deleting Tags
 
 		$category = new Category();
 		$product  = new Product();
@@ -1246,9 +1296,9 @@ class Bibliomundi extends Module
 
 		Db::getInstance()->delete('configuration',"name LIKE 'BBM_%'");
 
-		Db::getInstance()->execute('ALTER TABLE ' . _DB_PREFIX_ . 'product DROP COLUMN bbm_id_product, DROP COLUMN is_bbm');
+		Db::getInstance()->execute('ALTER TABLE `' . _DB_PREFIX_ . 'product` DROP COLUMN `bbm_id_product`, DROP COLUMN `is_bbm`');
 		
-		Db::getInstance()->execute('ALTER TABLE ' . _DB_PREFIX_ . 'category DROP COLUMN bbm_id_category, DROP COLUMN is_bbm');
+		Db::getInstance()->execute('ALTER TABLE `' . _DB_PREFIX_ . 'category` DROP COLUMN `bbm_id_category`, DROP COLUMN `is_bbm`');
 
 		return true;
 	}

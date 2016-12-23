@@ -1,4 +1,20 @@
 <?php
+/**
+* 2007-2015 PrestaShop
+*
+* NOTICE OF LICENSE
+*
+* This file is licenced under the Software License Agreement.
+* With the purchase or the installation of the software in your application
+* you accept the licence agreement.
+*
+* You must not modify, adapt or create derivative works of this source code
+*
+*  @author    Carlos Magno <cmagnosoares@gmail.com>
+*  @copyright 2007-2015 PrestaShop SA
+*  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+*/
+
 class GetFileController extends GetFileControllerCore
 {
 	/*
@@ -51,9 +67,9 @@ class GetFileController extends GetFileControllerCore
         /*
          * Bibliomundi 
          */
-
-        if(empty($filename) && 
-        	$idBBMProduct = Db::getInstance()->getValue("SELECT bbm_id_product FROM " . _DB_PREFIX_ . "product WHERE id_product = {$info['product_id']} AND is_bbm IS NOT NULL"))
+    	$idBBMProduct = isset($info['product_id']) ? Db::getInstance()->getValue("SELECT `bbm_id_product` FROM `" . _DB_PREFIX_ . "product` WHERE `id_product` = '" . pSQL((int)$info['product_id']) . "' AND `is_bbm` IS NOT NULL") : 0;
+        
+        if(empty($filename) && $idBBMProduct)
         {
         	$error = Hook::exec('actionDownloadBBMFile', array(
         		'id_bbm_product' => $idBBMProduct,
@@ -61,7 +77,7 @@ class GetFileController extends GetFileControllerCore
     		));
 
     		if($error)
-    			$this->displayCustomError("Ocorreu um erro interno. '$error'. Contacte a administração!");
+    			$this->displayCustomError("An internal error occurred. '$error'. Contact the administrator!");
 
 
     		OrderDetail::incrementDownload($info['id_order_detail']);
@@ -103,7 +119,7 @@ class GetFileController extends GetFileControllerCore
 	            @finfo_close($finfo);
 	        } elseif (function_exists('mime_content_type')) {
 	            $mimeType = @mime_content_type($file);
-	        } elseif (function_exists('exec')) {
+	        } /*elseif (function_exists('exec')) {
 	            $mimeType = trim(@exec('file -b --mime-type '.escapeshellarg($file)));
 	            if (!$mimeType) {
 	                $mimeType = trim(@exec('file --mime '.escapeshellarg($file)));
@@ -111,12 +127,12 @@ class GetFileController extends GetFileControllerCore
 	            if (!$mimeType) {
 	                $mimeType = trim(@exec('file -bi '.escapeshellarg($file)));
 	            }
-	        }
+	        }*/
 
 	        if (empty($mimeType)) {
 	            $bName = basename($filename);
 	            $bName = explode('.', $bName);
-	            $bName = strtolower($bName[count($bName) - 1]);
+	            $bName = Tools::strtolower($bName[count($bName) - 1]);
 
 	            $mimeTypes = array(
 	            'ez' => 'application/andrew-inset',
