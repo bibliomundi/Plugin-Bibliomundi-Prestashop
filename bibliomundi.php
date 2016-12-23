@@ -103,7 +103,7 @@ class Bibliomundi extends Module
 	    $arrCategories = array();
 	    $arrSubCategories = array();
 
-	    $file = fopen(_PS_MODULE_DIR_.$this->name.'/bisac_categories.csv', 'r');
+	    $file = fopen(_PS_MODULE_DIR_.$this->name.'/csv/bisac_categories.csv', 'r');
 		while (($line = fgetcsv($file, 1000, ';')) !== FALSE) {
 			if(!is_numeric($line[0])){
 				$arrKey = $line;
@@ -113,7 +113,7 @@ class Bibliomundi extends Module
 		}
 		fclose($file);
 
-		$file = fopen(_PS_MODULE_DIR_.$this->name.'/bisac_subcategories.csv', 'r');
+		$file = fopen(_PS_MODULE_DIR_.$this->name.'/csv/bisac_subcategories.csv', 'r');
 		while (($line = fgetcsv($file, 1000, ';')) !== FALSE) {
 			if(!is_numeric($line[0])){
 				$arrKey = $line;
