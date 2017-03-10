@@ -367,7 +367,7 @@ class Bibliomundi extends Module
 						{
 							foreach ($bbmProduct->getContributors() as $contributor)
 							{
-								if($contributor instanceof \BBM\model\Contributor\Autor)
+								if($contributor instanceof \BBMParser\Model\Author)
 								{
 									//Authors are inserted as Category, Tag, or simply leave them as a Feature
 
@@ -390,7 +390,7 @@ class Bibliomundi extends Module
 										$categoriesIds[] = $category->id;
 									}
 								}
-								/*else if($contributor instanceof \BBM\model\Contributor\Ilustrador)
+								/*else if($contributor instanceof \BBMParser\Model\Ilustrador)
 								{
 									Defines that the only Contributors that may be a Category are Authors
 								}*/
@@ -458,14 +458,14 @@ class Bibliomundi extends Module
 				$product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getImprintName());
 
 				//Inserts Authors separated by common commas ","
-				if($autorsName = implode(',', array_map(array('\BBM\model\Contributor', 'getFullNameStatically'), $bbmProduct->getContributorsByType('Autor'))))
+				if($autorsName = implode(',', array_map(array('\BBMParser\Model\Contributor', 'getFullNameStatically'), $bbmProduct->getContributorsByType('Autor'))))
 				{
 					$idFeatureValueAutor = $product->addFeaturesToDB($this->featureIDAutor, null, 1);
 					$product->addFeaturesCustomToDB($idFeatureValueAutor, 1, $autorsName);
 				}
 
 				//Inserts Illustrators separated by common commas ","
-				if($ilustradorsName = implode(',', array_map(array('\BBM\model\Contributor', 'getFullNameStatically'), $bbmProduct->getContributorsByType('Ilustrador'))))
+				if($ilustradorsName = implode(',', array_map(array('\BBMParser\Model\Contributor', 'getFullNameStatically'), $bbmProduct->getContributorsByType('Ilustrador'))))
 				{
 					$idFeatureValueIlustrador = $product->addFeaturesToDB($this->featureIDIlustrador, null, 1);
 					$product->addFeaturesCustomToDB($idFeatureValueIlustrador, 1, $ilustradorsName);
@@ -1002,7 +1002,7 @@ class Bibliomundi extends Module
 	    	`iso_code` VARCHAR(3)
     	)";
 	   
-	    if(Db::getInstance()->Execute($sql))
+	    if(!Db::getInstance()->Execute($sql))
 	    	return false;
 
 	    $sql= "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "bbm_category`
@@ -1012,7 +1012,7 @@ class Bibliomundi extends Module
 	    	`bbm_id_category` VARCHAR(10) NOT NULL
     	)";
 	   
-	    if(Db::getInstance()->Execute($sql))
+	    if(!Db::getInstance()->Execute($sql))
 	    	return false;
 
         return true;
