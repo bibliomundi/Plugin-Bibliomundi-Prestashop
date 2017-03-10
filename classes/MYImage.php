@@ -21,11 +21,7 @@ class MYImage extends ImageCore
     {
         parent::__construct($id, $id_lang);
     }
-	/*
-    * module: bibliomundi
-    * date: 2016-01-13 12:39:40
-    * version: 1.0.0
-    */
+
     public function copy($id_entity, $id_image = null, $url, $entity = 'products', $regenerate = true)
 	{
         $tmpfile = tempnam(_PS_TMP_IMG_DIR_, 'ps_import');

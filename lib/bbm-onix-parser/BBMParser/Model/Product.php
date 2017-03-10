@@ -1,41 +1,42 @@
 <?php
 
-namespace BBM\model;
+namespace BBMParser\Model;
 
 class Product
 {
-	private $availability;
-	private $id;
-	private $isbn;
-	private $operationType;
-	private $formatType;
-	private $protectionType;
-	private $collectionTitle;
-	private $title;
-	private $subTitle;
-	private $contributors = array();
-	private $editionNumber;
-	private $idiom;
-	private $pagesNumber;
-	private $size;
-	private $sizeUnit;
-	private $categories = array();
-	private $tags = array();
-	private $ageRating;
-	private $synopsis;
-	private $formatFile;
-	private $urlFile;
-	private $publisherName;
-	private $publisherWebsite;
-	private $price;
+    private $availability;
+    private $id;
+    private $isbn;
+    private $operationType;
+    private $formatType;
+    private $protectionType;
+    private $collectionTitle;
+    private $title;
+    private $subTitle;
+    private $contributors = array();
+    private $editionNumber;
+    private $idiom;
+    private $pageNumbers;
+    private $size;
+    private $sizeUnit;
+    private $categories = array();
+    private $tags;
+    private $ageRatingPrecision;
+    private $ageRatingValue;
+    private $synopsis;
+    private $formatFile;
+    private $urlFile;
+    private $prices = array();
+    private $includedTerritoriality;
+    private $imprintName;
 
-	/**
-	 * @param [type]
-	 */
-	public function setAvailability($availability)
-	{
-		$this->availability = $availability;
-	}
+    /**
+     * @param [type]
+     */
+    public function setAvailability($availability)
+    {
+        $this->availability = $availability;
+    }
 
     /**
      * Gets the value of availability.
@@ -47,13 +48,13 @@ class Product
         return $this->availability;
     }
 
-	/**
-	 * @param [type]
-	 */
-	public function setOperationType($type)
-	{
-		$this->operationType = \BBM\model\ProductEnum::$operationType[$type];
-	}
+    /**
+     * @param [type]
+     */
+    public function setOperationType($operationType)
+    {
+        $this->operationType = $operationType;
+    }
 
     /**
      * Gets the value of operationType.
@@ -106,7 +107,7 @@ class Product
      */
     public function setId($id)
     {
-        $this->id = (int) $id;
+        $this->id = $id;
     }
 
     /**
@@ -128,7 +129,7 @@ class Product
      */
     public function setFormatType($formatType)
     {
-        $this->formatType = \BBM\model\ProductEnum::$productFormDetail[$formatType];
+        $this->formatType = $formatType;
     }
 
     /**
@@ -150,7 +151,7 @@ class Product
      */
     public function setProtectionType($protectionType)
     {
-        $this->protectionType = \BBM\model\ProductEnum::$epubTechnicalProtection[$protectionType];
+        $this->protectionType = $protectionType;
     }
 
     /**
@@ -236,14 +237,14 @@ class Product
      */
     public function getContributorsByType($type)
     {
-    	$contributors = array();
+        $contributors = array();
 
         foreach ($this->contributors as $contributor) 
         {
             $reflection = new \ReflectionClass($contributor);
             
-        	if($reflection->getShortName() == ucfirst($type))
-        		$contributors[] = $contributor;
+            if($reflection->getShortName() == ucfirst($type))
+                $contributors[] = $contributor;
         }
 
         return $contributors;
@@ -256,9 +257,9 @@ class Product
      *
      * @return self
      */
-    public function setContributor(Contributor $contributor)
+    public function setContributors(Array $contributors)
     {
-        $this->contributors[] = $contributor;
+        $this->contributors = $contributors;
     }
 
     /**
@@ -280,7 +281,7 @@ class Product
      */
     public function setEditionNumber($editionNumber)
     {
-        $this->editionNumber = (int) $editionNumber;
+        $this->editionNumber = $editionNumber;
     }
 
     /**
@@ -302,7 +303,7 @@ class Product
      */
     public function setIdiom($idiomCode)
     {
-        $this->idiom = ProductEnum::$languageRoleDescription[$idiomCode];
+        $this->idiom = $idiomCode;
     }
 
     /**
@@ -310,9 +311,9 @@ class Product
      *
      * @return mixed
      */
-    public function getPagesNumber()
+    public function getPageNumbers()
     {
-        return $this->pagesNumber;
+        return $this->pageNumbers;
     }
 
     /**
@@ -322,9 +323,9 @@ class Product
      *
      * @return self
      */
-    public function setPagesNumber($pagesNumber)
+    public function setPageNumbers($pageNumbers)
     {
-        $this->pagesNumber = (int) $pagesNumber;
+        $this->pageNumbers = $pageNumbers;
     }
 
     /**
@@ -346,7 +347,7 @@ class Product
      */
     public function setSize($size)
     {
-        $this->size = (int) $size;
+        $this->size = $size;
     }
 
     /**
@@ -368,7 +369,7 @@ class Product
      */
     public function setSizeUnit($sizeUnit)
     {
-        $this->sizeUnit = \BBM\model\ProductEnum::$sizeUnit[$sizeUnit];
+        $this->sizeUnit = $sizeUnit;
     }
 
     /**
@@ -381,6 +382,21 @@ class Product
         return $this->categories;
     }
 
+    public function getCategoriesByType($type)
+    {
+        $categories = array();
+
+        foreach ($this->categories as $category) 
+        {
+            $reflection = new \ReflectionClass($category);
+            
+            if($reflection->getShortName() == ucfirst($type))
+                $categories[] = $category;
+        }
+
+        return $categories;
+    }
+
 
     /**
      * Sets the value of categories.
@@ -389,9 +405,9 @@ class Product
      *
      * @return self
      */
-    public function setCategory($category)
+    public function setCategories(Array $categories)
     {
-        $this->categories[] = $category;
+        $this->categories = $categories;
     }
 
     /**
@@ -421,9 +437,9 @@ class Product
      *
      * @return mixed
      */
-    public function getAgeRating()
+    public function getAgeRatingPrecision()
     {
-        return $this->ageRating;
+        return $this->ageRatingPrecision;
     }
 
     /**
@@ -433,10 +449,31 @@ class Product
      *
      * @return self
      */
-    public function setAgeRating($precision, $value)
+    public function setAgeRatingPrecision($ageRatingPrecision)
     {
-        $aux = $value > 1 ? 'anos' : 'ano';
-        $this->ageRating = \BBM\model\ProductEnum::$ageRatingClassification[$precision] . ' ' . $value . ' ' . $aux;
+        $this->ageRatingPrecision = $ageRatingPrecision;
+    }
+
+    /**
+     * Gets the value of ageRating.
+     *
+     * @return mixed
+     */
+    public function getAgeRatingValue()
+    {
+        return $this->ageRatingValue;
+    }
+
+    /**
+     * Sets the value of ageRating.
+     *
+     * @param mixed $ageRating the age rating
+     *
+     * @return self
+     */
+    public function setAgeRatingValue($ageRatingValue)
+    {
+        $this->ageRatingValue = $ageRatingValue;
     }
 
     /**
@@ -480,7 +517,7 @@ class Product
      */
     public function setFormatFile($formatFile)
     {
-        $this->formatFile = \BBM\model\ProductEnum::$formatFile[$formatFile];
+        $this->formatFile = $formatFile;
     }
 
     /**
@@ -502,51 +539,7 @@ class Product
      */
     public function setUrlFile($urlFile)
     {
-        $this->urlFile = 'http://' . $urlFile;
-    }
-
-    /**
-     * Gets the value of publisherName.
-     *
-     * @return mixed
-     */
-    public function getPublisherName()
-    {
-        return $this->publisherName;
-    }
-
-    /**
-     * Sets the value of publisherName.
-     *
-     * @param mixed $publisherName the publisher name
-     *
-     * @return self
-     */
-    public function setPublisherName($publisherName)
-    {
-        $this->publisherName = $publisherName;
-    }
-
-    /**
-     * Gets the value of publisherWebsite.
-     *
-     * @return mixed
-     */
-    public function getPublisherWebsite()
-    {
-        return $this->publisherWebsite;
-    }
-
-    /**
-     * Sets the value of publisherWebsite.
-     *
-     * @param mixed $publisherWebsite the publisher website
-     *
-     * @return self
-     */
-    public function setPublisherWebsite($publisherWebsite)
-    {
-        $this->publisherWebsite = $publisherWebsite;
+        $this->urlFile = $urlFile;
     }
 
     /**
@@ -554,9 +547,9 @@ class Product
      *
      * @return mixed
      */
-    public function getPrice()
+    public function getPrices()
     {
-        return $this->price;
+        return $this->prices;
     }
 
     /**
@@ -566,8 +559,52 @@ class Product
      *
      * @return self
      */
-    public function setPrice($price)
+    public function setPrices(Array $prices)
     {
-        $this->price = $price;
+        $this->prices = $prices;
+    }
+
+     /**
+     * Gets the value of price.
+     *
+     * @return mixed
+     */
+    public function getIncludedTerritoriality()
+    {
+        return $this->includedTerritoriality;
+    }
+
+    /**
+     * Sets the value of price.
+     *
+     * @param mixed $price the price
+     *
+     * @return self
+     */
+    public function setIncludedTerritoriality($includedTerritoriality)
+    {
+        $this->includedTerritoriality = $includedTerritoriality;
+    }
+
+     /**
+     * Gets the value of price.
+     *
+     * @return mixed
+     */
+    public function getImprintName()
+    {
+        return $this->imprintName;
+    }
+
+    /**
+     * Sets the value of price.
+     *
+     * @param mixed $price the price
+     *
+     * @return self
+     */
+    public function setImprintName($imprintName)
+    {
+        $this->imprintName = $imprintName;
     }
 }

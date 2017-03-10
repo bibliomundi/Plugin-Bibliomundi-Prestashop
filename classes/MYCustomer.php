@@ -17,7 +17,6 @@
 
 class MYCustomer extends CustomerCore
 {
-
     //Gambiarra para trazer o country_iso e o endereço escolhido pelo usuario
 	public function getMYAddresses($id_lang, $id_address)
     {

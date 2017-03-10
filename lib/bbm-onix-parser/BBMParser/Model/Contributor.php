@@ -1,16 +1,18 @@
 <?php
 
-namespace BBM\model;
+namespace BBMParser\Model;
 
 abstract class Contributor
 {
     private $id;
+    private $role;
 	private $preferenceOrderExibition;
 	private $typeName;
 	private $name;
 	private $lastName;
 	private $biography;
-	private $website;
+    private $website;
+	private $territoriality;
 
 
     /**
@@ -21,6 +23,16 @@ abstract class Contributor
     public function getId()
     {
         return $this->id;
+    }
+
+    public function getRole()
+    {
+        return $this->role;
+    }
+
+    public function setRole($role)
+    {
+        $this->role = $role;
     }
 
     /**
@@ -190,16 +202,26 @@ abstract class Contributor
         $this->website = $website;
     }
 
-}
+    /**
+     * Gets the value of website.
+     *
+     * @return mixed
+     */
+    public function getTerritoriality()
+    {
+        return $this->territoriality;
+    }
 
-namespace BBM\model\Contributor;
+    /**
+     * Sets the value of territoriality.
+     *
+     * @param mixed $territoriality the territoriality
+     *
+     * @return self
+     */
+    public function setTerritoriality($territoriality)
+    {
+        $this->territoriality = $territoriality;
+    }
 
-class Autor extends \BBM\model\Contributor
-{
-}
-
-namespace BBM\model\Contributor;
-
-class Ilustrador extends \BBM\model\Contributor
-{
 }
