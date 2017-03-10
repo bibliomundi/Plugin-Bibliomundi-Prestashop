@@ -199,7 +199,6 @@ class Request
         curl_setopt($this->curlHandler,CURLOPT_MAXREDIRS,$this->_maxRedirects);
         curl_setopt($this->curlHandler,CURLOPT_RETURNTRANSFER,true);
         curl_setopt($this->curlHandler,CURLOPT_FOLLOWLOCATION,$this->_followlocation);
-        curl_setopt($this->curlHandler,CURLOPT_PROXY,'127.0.0.1:8888');
 
         if($this->authentication)
         {
