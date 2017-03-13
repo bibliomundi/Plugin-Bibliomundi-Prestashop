@@ -92,7 +92,9 @@ class Bibliomundi extends Module
 		 	 		 		!$this->registerHook('actionCartSave') ||
 		 	 		 			!$this->registerHook('actionDownloadBBMFile') ||
 		 	 		 				!$this->registerHook('actionBeforeCartUpdateQty') ||
-		 	 		 					!$this->registerHook('actionOrderStatusPostUpdate'))
+		 	 		 					!$this->registerHook('actionOrderStatusPostUpdate') ||
+    										!$this->registerHook('actionProductDelete') ||
+    											!$this->registerHook('actionCategoryDelete'))
 
 	    	return false;
 
@@ -347,8 +349,8 @@ class Bibliomundi extends Module
 							$category = new MYCategory($id);
 						else //Insert a new Category
 						{
-							$category->name[(int)Configuration::get('PS_LANG_DEFAULT')] = $bbmCategory->getName();
-							$category->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite($bbmCategory->getName());
+							$category->name[(int)Configuration::get('PS_LANG_DEFAULT')] = $bbmCategory->getCode();
+							$category->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite($bbmCategory->getCode());
 							$category->id_parent = Category::getRootCategory()->id;//Associates a Default Category, which usually is Home
 							$category->add();
 							$category->insertBBMCategory($category->id, $bbmCategory->getCode());
@@ -1264,6 +1266,18 @@ class Bibliomundi extends Module
         }
 	}
 
+	public function hookActionProductDelete($params)
+	{
+		Db::getInstance()->delete(_DB_PREFIX_ . 'bbm_product', "id_product = " . $params['id_product']);
+		return true;
+	}
+
+	public function hookActionCategoryDelete($params)
+	{
+		Db::getInstance()->delete(_DB_PREFIX_ . 'bbm_category', "id_category = " . $params['category']->id_category);
+		return true;
+	}
+
 	public function loadFiles()
 	{
 		require_once dirname(__FILE__) . '/classes/MYProduct.php';
@@ -1310,7 +1324,7 @@ class Bibliomundi extends Module
 			)
 		);
 
-		Db::getInstance()->delete('configuration',"name LIKE 'BBM_%'");
+		Db::getInstance()->delete('configuration', "name LIKE 'BBM_%'");
 
 		Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'bbm_product`');
 		
