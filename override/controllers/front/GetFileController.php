@@ -67,7 +67,7 @@ class GetFileController extends GetFileControllerCore
         /*
          * Bibliomundi 
          */
-    	$idBBMProduct = isset($info['product_id']) ? Db::getInstance()->getValue("SELECT `bbm_id_product` FROM `" . _DB_PREFIX_ . "product` WHERE `id_product` = '" . pSQL((int)$info['product_id']) . "' AND `is_bbm` IS NOT NULL") : 0;
+    	$idBBMProduct = isset($info['product_id']) ? Db::getInstance()->getValue("SELECT `bbm_id_product` FROM `" . _DB_PREFIX_ . "bbm_product` WHERE `id_product` = '" . pSQL((int)$info['product_id']) . "'") : 0;
         
         if(empty($filename) && $idBBMProduct)
         {
