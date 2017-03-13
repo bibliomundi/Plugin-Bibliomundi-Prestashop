@@ -27,9 +27,8 @@
  * SOFTWARE.
  */
 
-
 // NEW INSTANCE OF THE CATALOG. EVERY NEW LIST MUST BE A NEW INSTANCE.
-$catalog = new \BBM\Catalog('ab2fb5541350fbb382d5f5d086e3d4f6bd99a22f', '249d2f6757b98300916c03603bfefd88903ea75b', 'complete');
+$catalog = new BBM\Catalog('YOUR_APY_KEY', 'YOUR_API_SECRET', 'SCOPE');
 
 /////////////////////////////////////////////////
 //                  NOTICE                     //

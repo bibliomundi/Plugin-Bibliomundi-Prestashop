@@ -28,7 +28,7 @@
  */
 
 // NEW INSTANCE OF THE PURCHASE. YOU CAN SEND MORE THEN ONE ITEM ON THE PURCHASE.
-$purchase = new BBM\Purchase('ab2fb5541350fbb382d5f5d086e3d4f6bd99a22f', '249d2f6757b98300916c03603bfefd88903ea75b', 'complete');
+$purchase = new BBM\Purchase('YOUR_API_KEY', 'YOUR_API_SECRET');
 
 /*
  * Server environment that you want to use: sandbox or production.
@@ -42,7 +42,7 @@ $purchase->environment = 'sandbox';
  */
 
 // UNCOMMENT THIS CODE TO ACTIVATE THE VERBOSE MODE
-$purchase->verbose(true);
+// $purchase->verbose(true);
 
 // CUSTOMER DATA ARRAY
 $customer = [
@@ -62,7 +62,7 @@ $purchase->setCustomer($customer);
 // ADD A NEW EBOOK, EVERY NEW EBOOK MUST BE ADDED AGAIN.
 // IF YOU WANT TO ADD A SINGLE BOOK, YOU CAN USE.
 // addItem(EBOOK_ID, PRICE, CURRENCY);
-$purchase->addItem(77, 17.5);
+$purchase->addItem(3, 1, 'BRL');
 
 // OTHERWISE, IF YOU WANT A MULTIPLE SALE, YOU CAN SET LIKE THIS
 //$purchasedEbooks = [
@@ -101,7 +101,7 @@ try
     // WHATEVER YOU SEND TO US, BUT, STAY ON THE PATTERNS AND FOLLOW THE GUIDE
     // AND WE WILL NOT HAVE FURTHER PROBLEMS.
 
-    echo $purchase->checkout('TRANSACTION_KEY_2', time());
+    echo $purchase->checkout('TRANSACTION_KEY', time());
 }
 catch(\BBM\Server\Exception $e)
 {

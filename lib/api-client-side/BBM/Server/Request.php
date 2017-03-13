@@ -243,9 +243,8 @@ class Request
 
         if($this->isSuccessfullRequest())
             return $this->_return;
-        else{
-            throw new Exception(@$this->_readableReturn['error_description'], $this->_status);
-        }
+        else
+            throw new Exception($this->getResponse(), $this->getHttpStatus());
     }
 
     public function ajax_execute()
