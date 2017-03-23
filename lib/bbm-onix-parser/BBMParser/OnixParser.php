@@ -24,7 +24,7 @@ class OnixParser
 		return isset($this->onix) ? $this->onix : null;
 	}
 
-	public function __construct($xml, $dir = false)
+	public function __construct($xml, $dir = false, $version = null)
 	{
 		if($dir)
 			$xml = simplexml_load_file($xml);
@@ -33,9 +33,13 @@ class OnixParser
 
 		$this->onix = new Onix();
 
-		$this->onix->setVersion($xml['release']);
+		$this->onix->setVersion($version ? $version : $xml['release']);
 
 		$this->onix->setHeader($this->getHeader($xml->Header));
+
+		//Needed!! becouse onix dont has tag for category names
+		Bisac::loadFile();
+		CDD::loadFile();
 
 		foreach ($xml->Product as $xmlProduct)
 		{
@@ -250,7 +254,7 @@ class OnixParser
 		switch ($this->onix->getVersion())
 		{
 			case '3.0':
-			if(!isset($xmlProduct->DescriptiveDetail->NoCollection))
+			if(!isset($xmlProduct->DescriptiveDetail->NoCollection) && isset($xmlProduct->DescriptiveDetail->Collection))
 				$collectionTitle = strval($xmlProduct->DescriptiveDetail->Collection->TitleDetail->TitleElement->TitleText);
 				
 				break;
@@ -777,7 +781,7 @@ class OnixParser
 		switch ($this->onix->getVersion())
 		{
 			case '3.0':
-				if(is_object($xmlProduct->ProductSupply->SupplyDetail->Price))//is object
+				if(count($xmlProduct->ProductSupply->SupplyDetail->Price))//is array
 				{
 					foreach ($xmlProduct->ProductSupply->SupplyDetail->Price as $xmlPrice) 
 					{

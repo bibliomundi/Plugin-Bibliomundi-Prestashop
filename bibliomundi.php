@@ -79,7 +79,7 @@ class Bibliomundi extends Module
 		$this->getConfig();
 
 		$this->context->controller->addJS($this->_path.'views/js/app.js');
-		$this->context->controller->addJS('/js/jquery/plugins/blockui/jquery.blockUI.js');
+		// $this->context->controller->addJS('/js/jquery/plugins/blockui/jquery.blockUI.js');
 	}
 
 	public function install()
@@ -374,7 +374,7 @@ class Bibliomundi extends Module
 									//Authors are inserted as Category, Tag, or simply leave them as a Feature
 
 									if(Configuration::get('BBM_AUTOR_INSERT_TYPE') == 1)//Insert as Tag
-										$tags[] = $contributor->getFullName();
+										$tags .= ';'.$contributor->getFullName();
 									else if(Configuration::get('BBM_AUTOR_INSERT_TYPE') == 2)//Insert as Category
 									{
 										$category = new MYCategory();
@@ -417,8 +417,8 @@ class Bibliomundi extends Module
 
 				//Associate all Tags, including the Author, if it´s the case, to the Product.
 				//OBS: If there is already a Tag with the same name, Prestashop ignores this addition. Which is excelent for Update routine.
-				if(count($tags))
-					Tag::addTags((int)Configuration::get('PS_LANG_DEFAULT'), $product->id, $tags);
+				if(count(explode(';', $tags)))
+					Tag::addTags((int)Configuration::get('PS_LANG_DEFAULT'), $product->id, explode(';', $tags));
 
 				//Associates Product to all created Categories. If they exist, association is ignored!
 				$product->addToCategories($categoriesIds);
@@ -508,7 +508,7 @@ class Bibliomundi extends Module
 				($image->validateFieldsLang(false, true)) === true && $image->add())
 				{
 				    //$image->associateTo($shops);
-				    if (!$image->copy($product->id, $image->id, $bbmProduct->getUrlFile(), 'products', true))
+				    if (!$image->copy($product->id, $image->id, 'http://'.$bbmProduct->getUrlFile(), 'products', true))
 				    {
 				        $image->delete();
 				    }
