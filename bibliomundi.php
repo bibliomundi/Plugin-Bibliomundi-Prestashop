@@ -79,7 +79,7 @@ class Bibliomundi extends Module
 		$this->getConfig();
 
 		$this->context->controller->addJS($this->_path.'views/js/app.js');
-		// $this->context->controller->addJS('/js/jquery/plugins/blockui/jquery.blockUI.js');
+		$this->context->controller->addJS('/js/jquery/plugins/blockui/jquery.blockUI.js');
 	}
 
 	public function install()
