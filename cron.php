@@ -23,16 +23,13 @@ require('bibliomundi.php');
 $bbm = new Bibliomundi();//Instancia o Módulo
 $bbm->operation = 2;//updates.
 
-try
-{
-	if (!Module::isInstalled('bibliomundi'))
-		throw new Exception("Module bibliomundi not installed");	
-		
-	$bbm->proccess();
-}
-catch(Exception $e)
-{
-	$bbm->{'msgLog'} = $e->getMessage();
+try {
+    if (!Module::isInstalled('bibliomundi')) {
+        throw new Exception("Module bibliomundi not installed");
+    }
+    $bbm->proccess();
+} catch (Exception $e) {
+    $bbm->{'msgLog'} = $e->getMessage();
 }
 
 $bbm->writeLog();

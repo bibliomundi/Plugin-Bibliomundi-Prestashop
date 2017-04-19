@@ -20,8 +20,8 @@ class MYProduct extends ProductCore
     public function __construct($id_product = null, $full = false, $id_lang = null, $id_shop = null, Context $context = null)
     {
         parent::__construct($id_product, $full, $id_lang, $id_shop, $context);
-    }      
-
+    }
+    
     public static function getIDByIDBBM($idBBM)
     {
         $sql = "SELECT `id_product` FROM `" . _DB_PREFIX_ . "bbm_product` WHERE `bbm_id_product` = '" . pSQL($idBBM) . "'";

@@ -30,13 +30,12 @@ require('bibliomundi.php');
 $cookie = new Cookie('psAdmin', '');
 $cookie->update();
 
-if (!$cookie->isLoggedBack())
-{
-	header('HTTP/1.0 403 Forbidden');
-	exit;
+if (!$cookie->isLoggedBack()) {
+    header('HTTP/1.0 403 Forbidden');
+    exit;
 }
 
 if (!Tools::getIsset(Tools::getValue('action')) || Tools::getValue('action') != 'status') {
-	header('Content-type: application/json');
-	echo Tools::file_get_contents(dirname(__FILE__).'/log/import.lock');
+    header('Content-type: application/json');
+    echo Tools::file_get_contents(dirname(__FILE__).'/log/import.lock');
 }

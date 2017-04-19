@@ -18,9 +18,9 @@
 class MYCategory extends CategoryCore
 {
     public function __construct($id_category = null, $id_lang = null, $id_shop = null)
-    {        
-        parent::__construct($id_category, $id_lang, $id_shop);	
-    }      
+    {
+        parent::__construct($id_category, $id_lang, $id_shop);
+    }
 
     public static function getIDByIDBBM($idBBM)
     {

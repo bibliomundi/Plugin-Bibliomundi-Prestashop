@@ -30,24 +30,23 @@ require('bibliomundi.php');
 $cookie = new Cookie('psAdmin', '');
 $cookie->update();
 
-if (!$cookie->isLoggedBack())
-{
-	header('HTTP/1.0 403 Forbidden');
-	exit;
+if (!$cookie->isLoggedBack()) {
+    header('HTTP/1.0 403 Forbidden');
+    exit;
 }
 
 if (!Tools::getIsset(Tools::getValue('action'))) {
-	$bbm = new Bibliomundi();//Instancia o Módulo
-	$bbm->clientID = Configuration::get('BBM_OPTION_CLIENT_ID');
-	$bbm->clientSecret = Configuration::get('BBM_OPTION_CLIENT_SECRET');
-	$bbm->operation = Configuration::get('BBM_OPTION_OPERATION');
-	$bbm->environment = Configuration::get('BBM_OPTION_ENVIRONMENT');
+    $bbm = new Bibliomundi();//Instancia o Módulo
+    $bbm->clientID = Configuration::get('BBM_OPTION_CLIENT_ID');
+    $bbm->clientSecret = Configuration::get('BBM_OPTION_CLIENT_SECRET');
+    $bbm->operation = Configuration::get('BBM_OPTION_OPERATION');
+    $bbm->environment = Configuration::get('BBM_OPTION_ENVIRONMENT');
 
-	if(Tools::getValue('action') == 'proccess') {
-		$bbm->proccess();
-	}
-	
-	if(Tools::getValue('action') == 'valid') {
-		$bbm->ajax_valid();
-	}
+    if (Tools::getValue('action') == 'proccess') {
+        $bbm->proccess();
+    }
+    
+    if (Tools::getValue('action') == 'valid') {
+        $bbm->ajaxValid();
+    }
 }

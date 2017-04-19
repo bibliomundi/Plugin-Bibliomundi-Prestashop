@@ -22,8 +22,8 @@ class MYImage extends ImageCore
         parent::__construct($id, $id_lang);
     }
 
-    public function copy($id_entity, $id_image = null, $url, $entity = 'products', $regenerate = true)
-	{
+    public function copy($id_entity, $url, $entity = 'products', $regenerate = true, $id_image = null)
+    {
         $tmpfile = tempnam(_PS_TMP_IMG_DIR_, 'ps_import');
         $watermark_types = explode(',', Configuration::get('WATERMARK_TYPES'));
 
@@ -32,16 +32,16 @@ class MYImage extends ImageCore
             case 'products':
                 $image_obj = new Image($id_image);
                 $path = $image_obj->getPathForCreation();
-            break;
+                break;
             case 'categories':
                 $path = _PS_CAT_IMG_DIR_.(int)$id_entity;
-            break;
+                break;
             case 'manufacturers':
                 $path = _PS_MANU_IMG_DIR_.(int)$id_entity;
-            break;
+                break;
             case 'suppliers':
                 $path = _PS_SUPP_IMG_DIR_.(int)$id_entity;
-            break;
+                break;
         }
 
         $url = urldecode(trim($url));
@@ -81,29 +81,26 @@ class MYImage extends ImageCore
             $tgt_width = $tgt_height = 0;
             $src_width = $src_height = 0;
             $error = 0;
-            ImageManager::resize($tmpfile, $path.'.jpg', null, null, 'jpg', false, $error, $tgt_width, $tgt_height, 5,
-                                 $src_width, $src_height);
+            ImageManager::resize($tmpfile, $path.'.jpg', null, null, 'jpg', false, $error, $tgt_width, $tgt_height, 5, $src_width, $src_height);
             $images_types = ImageType::getImagesTypes($entity, true);
 
             if ($regenerate) {
                 $path_infos = array();
                 $path_infos[] = array($tgt_width, $tgt_height, $path.'.jpg');
                 foreach ($images_types as $image_type) {
-                    $tmpfile = self::get_best_path($image_type['width'], $image_type['height'], $path_infos);
+                    $tmpfile = self::getBestPath($image_type['width'], $image_type['height'], $path_infos);
 
-                    if (ImageManager::resize($tmpfile, $path.'-'.Tools::stripslashes($image_type['name']).'.jpg', $image_type['width'],
-                                         $image_type['height'], 'jpg', false, $error, $tgt_width, $tgt_height, 5,
-                                         $src_width, $src_height)) {
+                    if (ImageManager::resize($tmpfile, $path.'-'.Tools::stripslashes($image_type['name']).'.jpg', $image_type['width'], $image_type['height'], 'jpg', false, $error, $tgt_width, $tgt_height, 5, $src_width, $src_height)) {
                         // the last image should not be added in the candidate list if it's bigger than the original image
                         if ($tgt_width <= $src_width && $tgt_height <= $src_height) {
                             $path_infos[] = array($tgt_width, $tgt_height, $path.'-'.Tools::stripslashes($image_type['name']).'.jpg');
                         }
                         if ($entity == 'products') {
                             if (is_file(_PS_TMP_IMG_DIR_.'product_mini_'.(int)$id_entity.'.jpg')) {
-                               unlink(_PS_TMP_IMG_DIR_.'product_mini_'.(int)$id_entity.'.jpg');
+                                unlink(_PS_TMP_IMG_DIR_.'product_mini_'.(int)$id_entity.'.jpg');
                             }
                             if (is_file(_PS_TMP_IMG_DIR_.'product_mini_'.(int)$id_entity.'_'.(int)Context::getContext()->shop->id.'.jpg')) {
-                               unlink(_PS_TMP_IMG_DIR_.'product_mini_'.(int)$id_entity.'_'.(int)Context::getContext()->shop->id.'.jpg');
+                                unlink(_PS_TMP_IMG_DIR_.'product_mini_'.(int)$id_entity.'_'.(int)Context::getContext()->shop->id.'.jpg');
                             }
                         }
                     }
@@ -118,9 +115,9 @@ class MYImage extends ImageCore
         }
         unlink($orig_tmpfile);
         return true;
-	}
+    }
 
-    private function get_best_path($tgt_width, $tgt_height, $path_infos)
+    private function getBestPath($tgt_width, $tgt_height, $path_infos)
     {
         $path_infos = array_reverse($path_infos);
         $path = '';
