@@ -106,7 +106,7 @@ class Catalog extends Connect
         }
         catch(Exception $e)
         {
-            throw $e;
+            throw new Exception("The client credentials are invalid!");
         }
 
         return true;

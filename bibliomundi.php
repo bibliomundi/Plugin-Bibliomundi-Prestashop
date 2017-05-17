@@ -71,7 +71,7 @@ class Bibliomundi extends Module
         $this->tab = 'others';
         $this->displayName = $this->l('Integration with Bibliomundi ebooks');
         $this->description = $this->l('Digital book distributor.');
-        $this->module_key = 'ce2baff2d6e63819c47e7af943a5d702';
+        $this->module_key = '343e3911dab411114fa84233c195abdf';
         $this->ps_versions_compliancy = array('min' => '1.6');
         $this->confirmUninstall = $this->l('Are you sure you want to uninstall our module?');
         $this->bootstrap = true;
@@ -80,8 +80,8 @@ class Bibliomundi extends Module
         $this->loadFiles();
         $this->getConfig();
 
-        $this->context->controller->addJS($this->_path.'views/js/app.js');
-        $this->context->controller->addJS('/js/jquery/plugins/blockui/jquery.blockUI.js');
+        // $this->context->controller->addJS($this->_path.'views/js/app.js');
+        // $this->context->controller->addJS('/js/jquery/plugins/blockui/jquery.blockUI.js');
     }
 
     public function install()
@@ -217,7 +217,7 @@ class Bibliomundi extends Module
             $catalog->validate();
             return $catalog->get();
         } catch (Exception $e) {
-            throw $e;
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -325,7 +325,7 @@ class Bibliomundi extends Module
                 $product->indexed = 1;
 
                 $categoriesIds = array();//Inserts firstly the categories and then associate them to the product
-                $tags            = $bbmProduct->getTags();//If there are no Tags, a empty array is returned
+                $tags          = $bbmProduct->getTags();//If there are no Tags, a empty array is returned
 
                 //Topics (Categories)
                 if (count($bbmProduct->getCategories())) {
@@ -531,17 +531,19 @@ class Bibliomundi extends Module
                     
                     if (file_exists(dirname(__FILE__).'/log/import.lock')) {
                         $result = Tools::jsonDecode(Tools::file_get_contents(dirname(__FILE__).'/log/import.lock'));
-                        if ($result->status == 'in progress') {
-                            if (time() - filemtime(dirname(__FILE__).'/log/import.lock') > 5) {
-                                unlink(dirname(__FILE__).'/log/import.lock');
-                                // restart
-                            } else {
-                                header('Content-Type: application/json; charset=utf-8');
-                                echo Tools::jsonEncode(array(
-                                    'status' => 'in progress',
-                                    'output' => 'Successfully'
-                                ));
-                                exit;
+                        if (!empty($result)) {
+                            if ($result->status == 'in progress') {
+                                if (time() - filemtime(dirname(__FILE__).'/log/import.lock') > 5) {
+                                    unlink(dirname(__FILE__).'/log/import.lock');
+                                    // restart
+                                } else {
+                                    header('Content-Type: application/json; charset=utf-8');
+                                    echo Tools::jsonEncode(array(
+                                        'status' => 'in progress',
+                                        'output' => 'Successfully'
+                                    ));
+                                    exit;
+                                }
                             }
                         }
                     }
@@ -629,17 +631,17 @@ class Bibliomundi extends Module
     private function createFeaturesAndOptions()
     {
         $features = array(
-            'ISBN'                => 'ISBN',
+            'ISBN'             => 'ISBN',
             'PUBLISHER_NAME'   => 'Editora',
             'FORMAT_TYPE'      => 'Formato',
             'EDITION_NUMBER'   => 'Edição',
             'PROTECTION_TYPE'  => 'Proteção',
             'IDIOM'            => 'Idioma',
-            'PAGES_NUMBER'       => 'Número de Páginas',
-            'AGE_RATING'        => 'Faixa Etária',
+            'PAGES_NUMBER'     => 'Número de Páginas',
+            'AGE_RATING'       => 'Faixa Etária',
             'COLLECTION_TITLE' => 'Coleção',
             'AUTOR'            => 'Autor',
-            'ILUSTRADOR'        => 'Ilustrador'
+            'ILUSTRADOR'       => 'Ilustrador'
         );
 
         foreach ($features as $key => $value) {
@@ -768,7 +770,7 @@ class Bibliomundi extends Module
                     'href' => AdminController::$currentIndex.'&configure='.$this->name.'&save'.$this->name.
                     '&token='.Tools::getAdminTokenLite('AdminModules'),
                 ),
-                'back' => array(
+            'back' => array(
                     'href' => AdminController::$currentIndex.'&token='.Tools::getAdminTokenLite('AdminModules'),
                     'desc' => $this->l('Back to list')
                 )
@@ -801,10 +803,10 @@ class Bibliomundi extends Module
                     'required'  => true
                 ),
                 array(
-                    'type'         => 'text',
+                    'type'      => 'text',
                     'label'     => $this->l('Secret Key'),
-                    'name'         => 'client_secret',
-                    'size'         => 20,
+                    'name'      => 'client_secret',
+                    'size'      => 20,
                     'required'  => true
                 ),
                 array(
@@ -880,7 +882,7 @@ class Bibliomundi extends Module
                     'href' => AdminController::$currentIndex.'&configure='.$this->name.'&save'.$this->name.
                     '&token='.Tools::getAdminTokenLite('AdminModules'),
                 ),
-                'back' => array(
+            'back' => array(
                     'href' => AdminController::$currentIndex.'&token='.Tools::getAdminTokenLite('AdminModules'),
                     'desc' => $this->l('Back to list')
                 )
@@ -982,13 +984,13 @@ class Bibliomundi extends Module
 
                 $bbmCustomer = array(
                     'customerIdentificationNumber'  => (int) $customer->id, // INT, YOUR STORE CUSTOMER ID
-                    'customerFullname'                 => $customer->firstname . ' ' . $this->context->customer->lastname, // STRING, CUSTOMER FULL NAME
+                    'customerFullname'              => $customer->firstname . ' ' . $this->context->customer->lastname, // STRING, CUSTOMER FULL NAME
                     'customerEmail'                 => $customer->email, // STRING, CUSTOMER EMAIL
-                    'customerGender'                 => $gender[$customer->id_gender], // ENUM, CUSTOMER GENDER, USE m OR f (LOWERCASE!! male or female)
-                    'customerBirthday'                 => str_replace('-', '/', $this->context->customer->birthday), // STRING, CUSTOMER BIRTH DATE, USE Y/m/d (XXXX/XX/XX)
-                    'customerCountry'                 => $address[0]['country_iso'], // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER COUNTRY (BR, US, ES, etc)
-                    'customerZipcode'                 => implode('', $zipCode[0]), // STRING, POSTAL CODE, ONLY NUMBERS
-                    'customerState'                     => $address[0]['state_iso'] // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER STATE (RJ, SP, NY, etc)
+                    'customerGender'                => $gender[$customer->id_gender], // ENUM, CUSTOMER GENDER, USE m OR f (LOWERCASE!! male or female)
+                    'customerBirthday'              => str_replace('-', '/', $this->context->customer->birthday), // STRING, CUSTOMER BIRTH DATE, USE Y/m/d (XXXX/XX/XX)
+                    'customerCountry'               => $address[0]['country_iso'], // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER COUNTRY (BR, US, ES, etc)
+                    'customerZipcode'               => implode('', $zipCode[0]), // STRING, POSTAL CODE, ONLY NUMBERS
+                    'customerState'                 => $address[0]['state_iso'] // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER STATE (RJ, SP, NY, etc)
                 );
 
                 $purchase->setCustomer($bbmCustomer);
@@ -1038,13 +1040,13 @@ class Bibliomundi extends Module
 
                 $bbmCustomer = array(
                     'customerIdentificationNumber'  => (int) $customer->id, // INT, YOUR STORE CUSTOMER ID
-                    'customerFullname'                 => $customer->firstname . ' ' . $this->context->customer->lastname, // STRING, CUSTOMER FULL NAME
+                    'customerFullname'              => $customer->firstname . ' ' . $this->context->customer->lastname, // STRING, CUSTOMER FULL NAME
                     'customerEmail'                 => $customer->email, // STRING, CUSTOMER EMAIL
-                    'customerGender'                 => $gender[$customer->id_gender], // ENUM, CUSTOMER GENDER, USE m OR f (LOWERCASE!! male or female)
-                    'customerBirthday'                 => str_replace('-', '/', $this->context->customer->birthday), // STRING, CUSTOMER BIRTH DATE, USE Y/m/d (XXXX/XX/XX)
-                    'customerCountry'                 => $address[0]['country_iso'], // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER COUNTRY (BR, US, ES, etc)
-                    'customerZipcode'                 => implode('', $zipCode[0]), // STRING, POSTAL CODE, ONLY NUMBERS
-                    'customerState'                     => $address[0]['state_iso'] // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER STATE (RJ, SP, NY, etc)
+                    'customerGender'                => $gender[$customer->id_gender], // ENUM, CUSTOMER GENDER, USE m OR f (LOWERCASE!! male or female)
+                    'customerBirthday'              => str_replace('-', '/', $this->context->customer->birthday), // STRING, CUSTOMER BIRTH DATE, USE Y/m/d (XXXX/XX/XX)
+                    'customerCountry'               => $address[0]['country_iso'], // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER COUNTRY (BR, US, ES, etc)
+                    'customerZipcode'               => implode('', $zipCode[0]), // STRING, POSTAL CODE, ONLY NUMBERS
+                    'customerState'                 => $address[0]['state_iso'] // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER STATE (RJ, SP, NY, etc)
                 );
 
                 $purchase->setCustomer($bbmCustomer);
