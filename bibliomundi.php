@@ -393,8 +393,11 @@ class Bibliomundi extends Module
 
                 //Associate all Tags, including the Author, if it´s the case, to the Product.
                 //OBS: If there is already a Tag with the same name, Prestashop ignores this addition. Which is excelent for Update routine.
-                if (count(explode(';', $tags))) {
-                    Tag::addTags((int)Configuration::get('PS_LANG_DEFAULT'), $product->id, explode(';', $tags));
+                $array_tags = explode(';', $tags);
+                $array_tags = array_filter($array_tags);
+
+                if (count($array_tags)) {
+                    Tag::addTags((int)Configuration::get('PS_LANG_DEFAULT'), $product->id, $array_tags);
                 }
 
                 //Associates Product to all created Categories. If they exist, association is ignored!

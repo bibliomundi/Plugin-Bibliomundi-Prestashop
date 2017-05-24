@@ -40,12 +40,20 @@ class Exception extends \Exception {
      * @param string $errors
      * @param int    $code
      */
-    public function __construct($errors, $code)
+    public function __construct($errors, $code = 0 )
     {
-        if(is_array($errors))
-            parent::__construct(implode(' - ', $errors), $code);
-        else
-            parent::__construct($errors, $code);
+        if($code) {
+            if(is_array($errors))
+                parent::__construct(implode(' - ', $errors), $code);
+            else
+                parent::__construct($errors, $code);
+        }
+        else {
+            if(is_array($errors))
+                parent::__construct(implode(' - ', $errors));
+            else
+                parent::__construct($errors);
+        }
     }
 
 }
