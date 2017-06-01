@@ -62,6 +62,11 @@ class Bibliomundi extends Module
 
     public $categoryIDAutor;//Category ID in which Author will be Parent of other inserted Authors
     
+    /**
+     * Store logging messages
+     * @var [type]
+     */
+    public $msgLog;
 
     public function __construct()
     {
@@ -595,8 +600,6 @@ class Bibliomundi extends Module
                         $output .= $this->displayconfirmation($this->l('Successful operation!'));
                     }
                 } catch (Exception $e) {
-                    $this->{'msgLog'} = $e->getMessage();
-                    
                     if ($isAjax) {
                         $output .= $e->getMessage();
                         header('Content-Type: application/json; charset=utf-8');
@@ -607,9 +610,11 @@ class Bibliomundi extends Module
                     } else {
                         $output .= $this->displayError($this->l($e->getMessage()));
                     }
-                }
                 
-                $this->writeLog();
+                    $this->msgLog = $e->getMessage();
+                    $this->writeLog();
+                }
+
                 $this->setConfig();//Updates the metadata configuration independentally
             }
         }
@@ -1234,8 +1239,10 @@ class Bibliomundi extends Module
 
     public function writeLog()
     {
-        $fp = fopen(dirname(__FILE__) . "/log/{$this->operationAlias[$this->operation]}.txt", 'a');
-        fwrite($fp, date('Y-m-d H:i:s') . ' - ' . $this->msgLog . "\n");
-        fclose($fp);
+        if (!empty($this->msgLog)) {
+            $fp = fopen(dirname(__FILE__) . "/log/{$this->operationAlias[$this->operation]}.txt", 'a');
+            fwrite($fp, date('Y-m-d H:i:s') . ' - ' . $this->msgLog . "\n");
+            fclose($fp);
+        }
     }
 }
