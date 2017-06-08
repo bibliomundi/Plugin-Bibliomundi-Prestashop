@@ -485,7 +485,12 @@ class Bibliomundi extends Module
                 $image->legend = $bbmProduct->getTitle();
                 if (($image->validateFields(false, true)) === true && ($image->validateFieldsLang(false, true)) === true && $image->add()) {
                     //$image->associateTo($shops);
-                    if (!$image->copy($product->id, 'http://'.$bbmProduct->getUrlFile(), 'products', true, $image->id)) {
+                    $image_url = 'http://'.$bbmProduct->getUrlFile();
+                    if (empty(getimagesize($image_url))) {
+                        $image_url = 'https://avatars0.githubusercontent.com/u/12715450?v=3&s=400';
+                    }
+                    
+                    if (!$image->copy($product->id, $image_url, 'products', true, $image->id)) {
                         $image->delete();
                     }
                 }
