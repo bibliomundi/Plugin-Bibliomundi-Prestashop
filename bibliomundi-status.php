@@ -27,10 +27,11 @@ include(dirname(__FILE__).'/../../config/config.inc.php');
 include(dirname(__FILE__).'/../../init.php');
 require('bibliomundi.php');
 
-$cookie = new Cookie('psAdmin', '');
-$cookie->update();
+$cookie = new Cookie('psAdmin', '', (int)Configuration::get('PS_COOKIE_LIFETIME_BO'));
+$employee = new Employee((int)$cookie->id_employee);
 
-if (!$cookie->isLoggedBack()) {
+if (!(Validate::isLoadedObject($employee) && $employee->checkPassword((int)$cookie->id_employee, $cookie->passwd)
+    && (!isset($cookie->remote_addr) || $cookie->remote_addr == ip2long(Tools::getRemoteAddr()) || !Configuration::get('PS_COOKIE_CHECKIP')))) {
     header('HTTP/1.0 403 Forbidden');
     exit;
 }

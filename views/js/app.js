@@ -72,7 +72,7 @@
 			$.ajax({
 				url: '/modules/bibliomundi/bibliomundi-status.php?action=status',
 				cache: false
-			}).done(function(data) {console.log(data);
+			}).done(function(data) {
 				switch(data.status) {
 					case 'in progress':
 						if (data.current) dialogContent.html('<i class="icon-refresh icon-spin"></i>&nbsp;Importing...&nbsp;' + data.current + '/' + data.total);

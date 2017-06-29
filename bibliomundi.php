@@ -53,6 +53,8 @@ class Bibliomundi extends Module
     public $featureIDIlustrador;//Authors are also inserted as features
     public $product_iso_code;
 
+    public $max_sandbox_products = 8;
+
    /*
     *
     * The Author will be inserted as Feature by default, but we will still allow
@@ -85,8 +87,8 @@ class Bibliomundi extends Module
         $this->loadFiles();
         $this->getConfig();
 
-        // $this->context->controller->addJS($this->_path.'views/js/app.js');
-        // $this->context->controller->addJS('/js/jquery/plugins/blockui/jquery.blockUI.js');
+        $this->context->controller->addJS($this->_path.'views/js/app.js');
+        $this->context->controller->addJS('/js/jquery/plugins/blockui/jquery.blockUI.js');
     }
 
     public function install()
@@ -253,14 +255,36 @@ class Bibliomundi extends Module
             $parser = new \BBMParser\OnixParser($this->getCatalog());
 
             if (!$productsAvailable = $parser->getOnix()->getProductsAvailable()) {
-                throw new Exception("There are no ebooks to import!");
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                    $result['status'] = 'error';
+                    $result['content'] = $this->l('There are no ebooks to import!');
+                    
+                    $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
+                    ftruncate($lock, 0);
+                    fwrite($lock, Tools::jsonEncode($result));
+                    fclose($lock);
+                    die;
+                } else {
+                    throw new Exception("There are no ebooks to import!");
+                }
             }
 
             $result['total'] = count($productsAvailable);
             $result['current'] = 0;
 
+            //Only get a maximum number of products when environment is sandbox
+            $stop_forearch = 0;
+            if ('sandbox' == $this->environmentAlias[$this->environment]) {
+                $stop_forearch = $this->max_sandbox_products;
+                $result['total'] = ($this->max_sandbox_products < count($productsAvailable)) ? $this->max_sandbox_products : count($productsAvailable);
+            }
+
             //Be it Complete or Update, it will all be here!
-            foreach ($productsAvailable as $bbmProduct) {
+            foreach ($productsAvailable as $key => $bbmProduct) {
+                if ($stop_forearch && $key >= $stop_forearch) {
+                    break;
+                }
+
                 $result['current'] = $result['current'] + 1;
                 $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
                 ftruncate($lock, 0);
@@ -549,14 +573,15 @@ class Bibliomundi extends Module
                                 if (time() - filemtime(dirname(__FILE__).'/log/import.lock') > 5) {
                                     unlink(dirname(__FILE__).'/log/import.lock');
                                     // restart
-                                } else {
-                                    header('Content-Type: application/json; charset=utf-8');
-                                    echo Tools::jsonEncode(array(
-                                        'status' => 'in progress',
-                                        'output' => 'Successfully'
-                                    ));
-                                    exit;
                                 }
+                                // else {
+                                //     header('Content-Type: application/json; charset=utf-8');
+                                //     echo Tools::jsonEncode(array(
+                                //         'status' => 'in progress',
+                                //         'output' => 'Successfully'
+                                //     ));
+                                //     exit;
+                                // }
                             }
                         }
                     }
@@ -1077,10 +1102,15 @@ class Bibliomundi extends Module
 
                     //Remove from Shopping Cart
 
-                    Db::getInstance()->execute('
-                        DELETE FROM `' . _DB_PREFIX_ . 'cart_product`
-                        WHERE `id_product` = ' . pSQL((int)$ebook['id_product']) . '
-                        AND `id_cart` = ' . pSQL((int)$params['cart']->id) . '');
+                    // Db::getInstance()->execute('
+                    //     DELETE FROM `' . _DB_PREFIX_ . 'cart_product`
+                    //     WHERE `id_product` = ' . pSQL((int)$ebook['id_product']) . '
+                    //     AND `id_cart` = ' . pSQL((int)$params['cart']->id) . '');
+                        
+                    $where = pSQL('`id_product` = ' . pSQL((int)$ebook['id_product']) .
+                             ' AND `id_cart` = ' . pSQL((int)$params['cart']->id));
+
+                    Db::getInstance()->delete('cart_product', $where);
                 }
 
                 /*$json = json_decode(str_replace("'", '"', $e->getMessage()));//Temporary Workaround
@@ -1119,17 +1149,31 @@ class Bibliomundi extends Module
         if (isset($this->cartErrorNumber)) {
             switch ($this->cartErrorNumber) { //It might be required to create na alternative than this simple Delete and Update
                 case 1:
-                    Db::getInstance()->execute('
-                        DELETE FROM `' . _DB_PREFIX_ . 'cart_product`
-                        WHERE `id_product` = ' . pSQL((int)$this->cartParams['product']->id) . '
-                        AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id) . '');
+                    $where = pSQL('`id_product` = ' . pSQL((int)$this->cartParams['product']->id) .
+                             ' AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id));
+
+                    Db::getInstance()->delete('cart_product', $where);
+
+                    // Db::getInstance()->execute('
+                    //     DELETE FROM `' . _DB_PREFIX_ . 'cart_product`
+                    //     WHERE `id_product` = ' . pSQL((int)$this->cartParams['product']->id) . '
+                    //     AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id) . '');
+
                     break;
                 case 2:
-                    Db::getInstance()->execute('
-                        UPDATE `' . _DB_PREFIX_ . 'cart_product`
-                        SET `quantity` = 1, `date_add` = NOW()
-                        WHERE `id_product` = ' . pSQL((int)$this->cartParams['product']->id) . '
-                        AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id) . '');
+                    $where = pSQL('`id_product` = ' . pSQL((int)$this->cartParams['product']->id) .
+                             ' AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id));
+
+                    Db::getInstance()->update('cart_product', array(
+                        'quantity' => 1,
+                        'date_add' => NOW()
+                        ), $where);
+
+                    // Db::getInstance()->execute('
+                    //     UPDATE `' . _DB_PREFIX_ . 'cart_product`
+                    //     SET `quantity` = 1, `date_add` = NOW()
+                    //     WHERE `id_product` = ' . pSQL((int)$this->cartParams['product']->id) . '
+                    //     AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id) . '');
                     break;
             }
             $this->context->controller->errors[] = Tools::displayError("You can not purchase more than 1 unit of the product \"{$this->cartParams['product']->name}\"", !Tools::getValue('ajax'));
@@ -1177,13 +1221,21 @@ class Bibliomundi extends Module
 
     public function hookActionProductDelete($params)
     {
-        Db::getInstance()->delete(_DB_PREFIX_ . 'bbm_product', "id_product = " . $params['id_product']);
+        $where = pSQL('`id_product` = ' . pSQL((int)$params['id_product']));
+
+        Db::getInstance()->delete('bbm_product', $where);
+
+        // Db::getInstance()->delete(_DB_PREFIX_ . 'bbm_product', "id_product = " . $params['id_product']);
         return true;
     }
 
     public function hookActionCategoryDelete($params)
     {
-        Db::getInstance()->delete(_DB_PREFIX_ . 'bbm_category', "id_category = " . $params['category']->id_category);
+        $where = pSQL('`id_product` = ' . pSQL((int)$params['category']->id_category));
+
+        Db::getInstance()->delete('bbm_category', $where);
+
+        // Db::getInstance()->delete(_DB_PREFIX_ . 'bbm_category', "id_category = " . $params['category']->id_category);
         return true;
     }
 
