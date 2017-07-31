@@ -243,26 +243,19 @@ class Bibliomundi extends Module
             'status' => 'in progress'
         );
         
-        $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
-        ftruncate($lock, 0);
-        fwrite($lock, Tools::jsonEncode($result));
-        fclose($lock);
+        $this->_updateImportLog($result);
         
         try {
             set_time_limit(0);//Avoids timeout, considering there will be a number of operations
 
             //header('Content-Type: application/xml; charset=utf-8'); echo $this->getCatalog(); exit;
             $parser = new \BBMParser\OnixParser($this->getCatalog());
-
+            
             if (!$productsAvailable = $parser->getOnix()->getProductsAvailable()) {
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                     $result['status'] = 'error';
                     $result['content'] = $this->l('There are no ebooks to import!');
-                    
-                    $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
-                    ftruncate($lock, 0);
-                    fwrite($lock, Tools::jsonEncode($result));
-                    fclose($lock);
+                    $this->_updateImportLog($result);
                     die;
                 } else {
                     throw new Exception("There are no ebooks to import!");
@@ -274,23 +267,24 @@ class Bibliomundi extends Module
 
             //Only get a maximum number of products when environment is sandbox
             $stop_forearch = 0;
-            if ('sandbox' == $this->environmentAlias[$this->environment]) {
-                $stop_forearch = $this->max_sandbox_products;
-                $result['total'] = ($this->max_sandbox_products < count($productsAvailable)) ? $this->max_sandbox_products : count($productsAvailable);
-            }
-
+//            $this->max_sandbox_products = 8;
+//            if ('sandbox' == $this->environmentAlias[$this->environment]) {
+//                $stop_forearch = $this->max_sandbox_products;
+//                $result['total'] = ($this->max_sandbox_products < count($productsAvailable)) ? $this->max_sandbox_products : count($productsAvailable);
+//            }
+            
+            $downloadingImageFlg = false;
             //Be it Complete or Update, it will all be here!
             foreach ($productsAvailable as $key => $bbmProduct) {
                 if ($stop_forearch && $key >= $stop_forearch) {
                     break;
                 }
-
-                $result['current'] = $result['current'] + 1;
-                $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
-                ftruncate($lock, 0);
-                fwrite($lock, Tools::jsonEncode($result));
-                fclose($lock);
-
+                
+                if (!$downloadingImageFlg) {
+                    $result['current'] = ($result['current'] >= $result['total']) ? $result['total'] : $result['current'] + 1;
+                    $this->_updateImportLog($result);
+                }
+                
                 $this->product_iso_code = '';
                 //d($bbmProduct);
                 $product = new MYProduct();
@@ -298,6 +292,10 @@ class Bibliomundi extends Module
 
                 //Avoids duplicated entries
                 if ($idProductAlreadyInserted && $bbmProduct->getOperationType() == '03') {
+                    if ($downloadingImageFlg) {
+                        $result['current'] = ($result['current'] >= $result['total']) ? $result['total'] : $result['current'] + 1;
+                        $this->_updateImportLog($result);
+                    }
                     continue;
                 }
 
@@ -307,6 +305,10 @@ class Bibliomundi extends Module
 
                 //In case the process of Updated includes the Deletion of a Product
                 if ($bbmProduct->getOperationType() == '05') {
+                    if ($downloadingImageFlg) {
+                        $result['current'] = ($result['current'] >= $result['total']) ? $result['total'] : $result['current'] + 1;
+                        $this->_updateImportLog($result);
+                    }
                     if ($idProductAlreadyInserted) {
                         $product = new MYProduct($idProductAlreadyInserted);
                         $product->delete();
@@ -364,11 +366,14 @@ class Bibliomundi extends Module
                         if ($id = MYCategory::getIDByIDBBM($bbmCategory->getCode())) {
                             $category = new MYCategory($id);
                         } else { //Insert a new Category
+                            if (empty($bbmCategory->getName())) {
+                                continue;
+                            }
                             $category->name[(int)Configuration::get('PS_LANG_DEFAULT')] = $bbmCategory->getName();
                             $category->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite($bbmCategory->getCode());
                             $category->id_parent = Category::getRootCategory()->id;//Associates a Default Category, which usually is Home
                             $category->add();
-                            $category->insertBBMCategory($category->id, $bbmCategory->getCode());
+                            $category->insertBBMCategory($category->id, $bbmCategory->getCode());                            
                         }
                         $categoriesIds[] = $category->id;
                     }
@@ -501,39 +506,30 @@ class Bibliomundi extends Module
                         $image->delete();
                     }
                 }
-
-                $image = new MYImage();
-                $image->id_product = $product->id;
-                $image->position = MYImage::getHighestPosition($product->id) + 1;
-                $image->cover = true;
-                $image->legend = $bbmProduct->getTitle();
-                if (($image->validateFields(false, true)) === true && ($image->validateFieldsLang(false, true)) === true && $image->add()) {
-                    //$image->associateTo($shops);
-                    $image_url = 'http://'.$bbmProduct->getUrlFile();
-                    if (empty(getimagesize($image_url))) {
-                        $image_url = 'https://avatars0.githubusercontent.com/u/12715450?v=3&s=400';
-                    }
-                    
-                    if (!$image->copy($product->id, $image_url, 'products', true, $image->id)) {
-                        $image->delete();
-                    }
+                $downloadingImageFlg = true;
+                $cmd = "php downloadImage.php " . $product->id . " " . escapeshellarg($bbmProduct->getTitle()) . " " . escapeshellarg($bbmProduct->getUrlFile()) . " " . $result['total'] ." &";		
+                if (substr(php_uname(), 0, 7) == "Windows"){ 
+                    pclose(popen("start /B ". $cmd, "r")); 
+                } 
+                else { 
+                    exec($cmd . " > /dev/null &");   
                 }
-
-                //throw new Exception("Error Processing Request", 1);
+                
             }
             
-            $result['status'] = 'complete';
-            $result['content'] = $this->l('Successful operation!');
+            if(isset($result['current']) && $result['current'] == $result['total']) {
+                $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
+                ftruncate($lock, 0);
+                $result['status'] = 'complete';
+                $result['content'] = $this->l('Successful operation!');
+                fwrite($lock, Tools::jsonEncode($result));
+                fclose($lock);
+            }            
         } catch (Exception $e) {
             $result['status'] = 'error';
             $result['content'] = $e->getMessage();
             throw $e;
         }
-        
-        $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
-        ftruncate($lock, 0);
-        fwrite($lock, Tools::jsonEncode($result));
-        fclose($lock);
     }
 
     public function getContent()
@@ -1148,7 +1144,7 @@ class Bibliomundi extends Module
     {
         if (isset($this->cartErrorNumber)) {
             switch ($this->cartErrorNumber) { //It might be required to create na alternative than this simple Delete and Update
-                case 1:
+                case 1: 
                     $where = pSQL('`id_product` = ' . pSQL((int)$this->cartParams['product']->id) .
                              ' AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id));
 
@@ -1301,5 +1297,12 @@ class Bibliomundi extends Module
             fwrite($fp, date('Y-m-d H:i:s') . ' - ' . $this->msgLog . "\n");
             fclose($fp);
         }
+    }
+    private function _updateImportLog($result) 
+    {
+        $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
+        ftruncate($lock, 0);
+        fwrite($lock, Tools::jsonEncode($result));
+        fclose($lock);
     }
 }
