@@ -507,14 +507,13 @@ class Bibliomundi extends Module
                     }
                 }
                 $downloadingImageFlg = true;
-                $cmd = "php downloadImage.php " . $product->id . " " . escapeshellarg($bbmProduct->getTitle()) . " " . escapeshellarg($bbmProduct->getUrlFile()) . " " . $result['total'] ." &";		
-                if (substr(php_uname(), 0, 7) == "Windows"){ 
-                    pclose(popen("start /B ". $cmd, "r")); 
+                $cmd = "php downloadImage.php " . $product->id . " \"" . $bbmProduct->getTitle() . "\" \"" . $bbmProduct->getUrlFile() . "\" " . $result['total'] ." &";
+                if (Tools::substr(php_uname(), 0, 7) == "Windows"){ 
+                    pclose(popen("start ". $cmd, "r")); 
                 } 
-                else { 
-                    exec($cmd . " > /dev/null &");   
+                else {
+                    pclose(popen($cmd, "r"));
                 }
-                
             }
             
             if(isset($result['current']) && $result['current'] == $result['total']) {

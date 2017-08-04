@@ -4,7 +4,9 @@ include(dirname(__FILE__).'/../../init.php');
 require('bibliomundi.php');
 require_once dirname(__FILE__) . '/classes/MYImage.php';
 require_once dirname(__FILE__).'/../../classes/module/Module.php';
-class DownloadImage extends Module{};
+class DownloadImage extends Module
+{
+};
 
 $argv = $_SERVER['argv'];
 $productId = $argv[1];
@@ -34,7 +36,7 @@ if (($image->validateFields(false, true)) === true && ($image->validateFieldsLan
     $result['current'] = ($result['current'] >= $totalProduct) ? $totalProduct : $result['current'];
     $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
     ftruncate($lock, 0);
-    if(isset($result['current']) && $result['current'] == $totalProduct) {
+    if (isset($result['current']) && $result['current'] == $totalProduct) {
         $result['status'] = 'complete';
         $result['content'] = $downloadImage->l('Successful operation!');
     }
