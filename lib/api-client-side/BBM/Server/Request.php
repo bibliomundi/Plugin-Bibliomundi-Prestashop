@@ -287,7 +287,8 @@ class Request
      */
     public function getResponse()
     {
-        return @$this->_readableReturn['message'];
+        $response = isset($this->_readableReturn['message']) ? $this->_readableReturn['message'] : $this->_return;
+        return $response ;
     }
 
     /**

@@ -25,7 +25,7 @@
 
 include(dirname(__FILE__).'/../../config/config.inc.php');
 include(dirname(__FILE__).'/../../init.php');
-require('bibliomundi.php');
+require_once('bibliomundi.php');
 
 $cookie = new Cookie('psAdmin', '', (int)Configuration::get('PS_COOKIE_LIFETIME_BO'));
 $employee = new Employee((int)$cookie->id_employee);

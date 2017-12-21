@@ -35,6 +35,7 @@ class Bibliomundi extends Module
     public $environment;
     public $operationAlias = array(1 => 'complete', 2 => 'updates');
     public $environmentAlias = array(1 => 'sandbox', 2 => 'production');
+    public $addEbooksCat = array(1 => 'yes', 2 => 'no');
 
     /*
      * The features will be the personalised fields of our modules. Do not attempt workarounds, please!
@@ -86,7 +87,7 @@ class Bibliomundi extends Module
         parent::__construct();
         $this->loadFiles();
         $this->getConfig();
-
+        $this->registerHook('actionValidateOrder');
         $this->context->controller->addJS($this->_path.'views/js/app.js');
         $this->context->controller->addJS('/js/jquery/plugins/blockui/jquery.blockUI.js');
     }
@@ -103,59 +104,13 @@ class Bibliomundi extends Module
                                     !$this->registerHook('actionBeforeCartUpdateQty') ||
                                         !$this->registerHook('actionOrderStatusPostUpdate') ||
                                             !$this->registerHook('actionProductDelete') ||
-                                                !$this->registerHook('actionCategoryDelete')) {
+                                                !$this->registerHook('actionCategoryDelete') ||
+                                                    //!$this->registerHook('displayProductTab') ||
+                                                        !$this->registerHook('actionValidateOrder')) {
             return false;
         }
         return true;
     }
-
-    /*public function createCategories() {
-
-        $arrCategories = array();
-        $arrSubCategories = array();
-
-        $file = fopen(_PS_MODULE_DIR_.$this->name.'/csv/bisac_categories.csv', 'r');
-        while (($line = fgetcsv($file, 1000, ';')) !== FALSE) {
-            if (!is_numeric($line[0])){
-                $arrKey = $line;
-            }else{
-                $arrCategories[] = array_combine($arrKey, $line);
-            }
-        }
-        fclose($file);
-
-        $file = fopen(_PS_MODULE_DIR_.$this->name.'/csv/bisac_subcategories.csv', 'r');
-        while (($line = fgetcsv($file, 1000, ';')) !== FALSE) {
-            if (!is_numeric($line[0])){
-                $arrKey = $line;
-            }else{
-                $arrSubCategories[$line[1]][] = array_combine($arrKey, $line);
-            }
-        }
-        fclose($file);
-
-        $cat = $subCat = new MYCategory();
-
-        foreach ($arrCategories as $category) {
-
-            $cat->is_bbm = true;
-            $cat->bbm_id_category = $category['bisac_code'];
-            $cat->id_parent = Category::getRootCategory()->id;
-            $cat->name[(int)Configuration::get('PS_LANG_DEFAULT')] = $category['bisac_description'];
-            $cat->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite($category['description_eng']);
-            $cat->add();
-
-            foreach ($arrSubCategories[$category['id']] as $subCategories) {
-
-                $subCat->is_bbm = true;
-                $subCat->bbm_id_category = $subCategories['code'];
-                $subCat->id_parent = (int)$cat->id;
-                $subCat->name[(int)Configuration::get('PS_LANG_DEFAULT')] = $subCategories['description_ptbr'];
-                $subCat->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite($subCategories['description_en']);
-                $subCat->add();
-            }
-        }
-    }*/
 
     public function uninstall()
     {
@@ -172,6 +127,7 @@ class Bibliomundi extends Module
         Configuration::updateValue('BBM_OPTION_CLIENT_SECRET', $this->clientSecret);
         Configuration::updateValue('BBM_OPTION_OPERATION', $this->operation);
         Configuration::updateValue('BBM_OPTION_ENVIRONMENT', $this->environment);
+        Configuration::updateValue('BBM_OPTION_ADD_EBOOKS_CAT', $this->addEbooksCat);
     }
 
     private function getConfig()
@@ -182,19 +138,24 @@ class Bibliomundi extends Module
         $this->clientSecret             = Configuration::get('BBM_OPTION_CLIENT_SECRET');
         $this->operation                = Configuration::get('BBM_OPTION_OPERATION');
         $this->environment              = Configuration::get('BBM_OPTION_ENVIRONMENT');
+        $this->addEbooksCat              = Configuration::get('BBM_OPTION_ADD_EBOOKS_CAT');
 
-        $this->featureIDISBN            = Configuration::get('BBM_FEATURE_ID_ISBN');
+//        $this->featureIDISBN            = Configuration::get('BBM_FEATURE_ID_ISBN');
+//        $this->featureIDPublisherName   = Configuration::get('BBM_FEATURE_ID_PUBLISHER_NAME');
+//        $this->featureIDFormatType      = Configuration::get('BBM_FEATURE_ID_FORMAT_TYPE');
+//        $this->featureIDEditionNumber   = Configuration::get('BBM_FEATURE_ID_EDITION_NUMBER');
+//        $this->featureIDIdiom           = Configuration::get('BBM_FEATURE_ID_IDIOM');
+//        $this->featureIDPagesNumber     = Configuration::get('BBM_FEATURE_ID_PAGES_NUMBER');
+//        $this->featureIDProtectionType  = Configuration::get('BBM_FEATURE_ID_PROTECTION_TYPE');
+//        $this->featureIDAgeRating       = Configuration::get('BBM_FEATURE_ID_AGE_RATING');
+//        $this->featureIDCollectionTitle = Configuration::get('BBM_FEATURE_ID_COLLECTION_TITLE');
+//        $this->featureIDAutor           = Configuration::get('BBM_FEATURE_ID_AUTOR');
+//        $this->featureIDIlustrador      = Configuration::get('BBM_FEATURE_ID_ILUSTRADOR');
         $this->featureIDPublisherName   = Configuration::get('BBM_FEATURE_ID_PUBLISHER_NAME');
-        $this->featureIDFormatType      = Configuration::get('BBM_FEATURE_ID_FORMAT_TYPE');
-        $this->featureIDEditionNumber   = Configuration::get('BBM_FEATURE_ID_EDITION_NUMBER');
         $this->featureIDIdiom           = Configuration::get('BBM_FEATURE_ID_IDIOM');
         $this->featureIDPagesNumber     = Configuration::get('BBM_FEATURE_ID_PAGES_NUMBER');
         $this->featureIDProtectionType  = Configuration::get('BBM_FEATURE_ID_PROTECTION_TYPE');
-        $this->featureIDAgeRating       = Configuration::get('BBM_FEATURE_ID_AGE_RATING');
-        $this->featureIDCollectionTitle = Configuration::get('BBM_FEATURE_ID_COLLECTION_TITLE');
-        $this->featureIDAutor           = Configuration::get('BBM_FEATURE_ID_AUTOR');
-        $this->featureIDIlustrador      = Configuration::get('BBM_FEATURE_ID_ILUSTRADOR');
-        
+
         if (Configuration::get('BBM_AUTOR_INSERT_TYPE') == 2) {
             $aux = Configuration::get('BBM_CATEGORY_ID_AUTOR');
 
@@ -217,7 +178,6 @@ class Bibliomundi extends Module
     {
         $catalog = new BBM\Catalog($this->clientID, $this->clientSecret, $this->operationAlias[$this->operation]);
         $catalog->environment = $this->environmentAlias[$this->environment];
-
         //$catalog->verbose(true);
 
         try {
@@ -243,19 +203,17 @@ class Bibliomundi extends Module
             'status' => 'in progress'
         );
         
-        $this->_updateImportLog($result);
+        self::_updateImportLog($result);
         
         try {
             set_time_limit(0);//Avoids timeout, considering there will be a number of operations
 
-            //header('Content-Type: application/xml; charset=utf-8'); echo $this->getCatalog(); exit;
             $parser = new \BBMParser\OnixParser($this->getCatalog());
-            
             if (!$productsAvailable = $parser->getOnix()->getProductsAvailable()) {
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                     $result['status'] = 'error';
                     $result['content'] = $this->l('There are no ebooks to import!');
-                    $this->_updateImportLog($result);
+                    self::_updateImportLog($result);
                     die;
                 } else {
                     throw new Exception("There are no ebooks to import!");
@@ -267,13 +225,14 @@ class Bibliomundi extends Module
 
             //Only get a maximum number of products when environment is sandbox
             $stop_forearch = 0;
-//            $this->max_sandbox_products = 8;
-//            if ('sandbox' == $this->environmentAlias[$this->environment]) {
-//                $stop_forearch = $this->max_sandbox_products;
-//                $result['total'] = ($this->max_sandbox_products < count($productsAvailable)) ? $this->max_sandbox_products : count($productsAvailable);
-//            }
+            $this->max_sandbox_products = 8;
+            if ('sandbox' == $this->environmentAlias[$this->environment]) {
+                $stop_forearch = $this->max_sandbox_products;
+                $result['total'] = ($this->max_sandbox_products < count($productsAvailable)) ? $this->max_sandbox_products : count($productsAvailable);
+            }
             
             $downloadingImageFlg = false;
+            $ebooksCatId = $this->_getEbookCategoryId();
             //Be it Complete or Update, it will all be here!
             foreach ($productsAvailable as $key => $bbmProduct) {
                 if ($stop_forearch && $key >= $stop_forearch) {
@@ -282,11 +241,9 @@ class Bibliomundi extends Module
                 
                 if (!$downloadingImageFlg) {
                     $result['current'] = ($result['current'] >= $result['total']) ? $result['total'] : $result['current'] + 1;
-                    $this->_updateImportLog($result);
+                    self::_updateImportLog($result);
                 }
-                
                 $this->product_iso_code = '';
-                //d($bbmProduct);
                 $product = new MYProduct();
                 $idProductAlreadyInserted = MYProduct::getIDByIDBBM($bbmProduct->getId());//Verifies if it exists
 
@@ -294,7 +251,7 @@ class Bibliomundi extends Module
                 if ($idProductAlreadyInserted && $bbmProduct->getOperationType() == '03') {
                     if ($downloadingImageFlg) {
                         $result['current'] = ($result['current'] >= $result['total']) ? $result['total'] : $result['current'] + 1;
-                        $this->_updateImportLog($result);
+                        self::_updateImportLog($result);
                     }
                     continue;
                 }
@@ -307,7 +264,7 @@ class Bibliomundi extends Module
                 if ($bbmProduct->getOperationType() == '05') {
                     if ($downloadingImageFlg) {
                         $result['current'] = ($result['current'] >= $result['total']) ? $result['total'] : $result['current'] + 1;
-                        $this->_updateImportLog($result);
+                        self::_updateImportLog($result);
                     }
                     if ($idProductAlreadyInserted) {
                         $product = new MYProduct($idProductAlreadyInserted);
@@ -371,9 +328,11 @@ class Bibliomundi extends Module
                             }
                             $category->name[(int)Configuration::get('PS_LANG_DEFAULT')] = $bbmCategory->getName();
                             $category->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite($bbmCategory->getCode());
-                            $category->id_parent = Category::getRootCategory()->id;//Associates a Default Category, which usually is Home
+                            // Add all imported categories to ebooks category
+                            $category->id_parent = $ebooksCatId;
+                            //$category->id_parent = Category::getRootCategory()->id;//Associates a Default Category, which usually is Home
                             $category->add();
-                            $category->insertBBMCategory($category->id, $bbmCategory->getCode());                            
+                            $category->insertBBMCategory($category->id, $bbmCategory->getCode());
                         }
                         $categoriesIds[] = $category->id;
                     }
@@ -405,10 +364,6 @@ class Bibliomundi extends Module
                                         $categoriesIds[] = $category->id;
                                     }
                                 }
-                                /*else if ($contributor instanceof \BBMParser\Model\Ilustrador)
-                                {
-                                    Defines that the only Contributors that may be a Category are Authors
-                                }*/
                             }
                         }
                     }
@@ -443,32 +398,42 @@ class Bibliomundi extends Module
                 //2- Creates a Value Feature by addFeaturesToDB function and collects ID
                 //3- Associates Value Feature to Product and language through addFeaturesCustomToDB function
 
-                $idFeatureValue = $product->addFeaturesToDB($this->featureIDISBN, null, 1);
-                $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getISBN());
+//                $idFeatureValue = $product->addFeaturesToDB($this->featureIDISBN, null, 1);
+//                $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getISBN());
 
                 $idFeatureValue = $product->addFeaturesToDB($this->featureIDIdiom, null, 1);
                 $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getIdiom());
 
-                if ($bbmProduct->getCollectionTitle()) {
-                    $idFeatureValue = $product->addFeaturesToDB($this->featureIDCollectionTitle, null, 1);
-                    $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getCollectionTitle());
+//                if ($bbmProduct->getCollectionTitle()) {
+//                    $idFeatureValue = $product->addFeaturesToDB($this->featureIDCollectionTitle, null, 1);
+//                    $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getCollectionTitle());
+//                }
+
+//                $idFeatureValue = $product->addFeaturesToDB($this->featureIDAgeRating, null, 1);
+//                $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getAgeRatingValue());
+
+                switch ($bbmProduct->getProtectionType()) {
+                    case '01':
+                        $epub_technical_protection = 'Social DRM';
+                        break;
+                    case '02':
+                        $epub_technical_protection = 'Adobe DRM';
+                        break;
+                    default:
+                        $epub_technical_protection = 'No DRM';
                 }
-
-                $idFeatureValue = $product->addFeaturesToDB($this->featureIDAgeRating, null, 1);
-                $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getAgeRatingValue());
-
                 $idFeatureValue = $product->addFeaturesToDB($this->featureIDProtectionType, null, 1);
-                $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getProtectionType());
+                $product->addFeaturesCustomToDB($idFeatureValue, 1, $epub_technical_protection);
 
                 $idFeatureValue = $product->addFeaturesToDB($this->featureIDPagesNumber, null, 1);
                 $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getPageNumbers());
 
-                $idFeatureValue = $product->addFeaturesToDB($this->featureIDEditionNumber, null, 1);
-                $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getEditionNumber());
+//                $idFeatureValue = $product->addFeaturesToDB($this->featureIDEditionNumber, null, 1);
+//                $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getEditionNumber());
 
-                $idFeatureValue = $product->addFeaturesToDB($this->featureIDFormatType, null, 1);
-                $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getFormatType());
-
+//                $idFeatureValue = $product->addFeaturesToDB($this->featureIDFormatType, null, 1);
+//                $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getFormatType());
+//
                 $idFeatureValue = $product->addFeaturesToDB($this->featureIDPublisherName, null, 1);
                 $product->addFeaturesCustomToDB($idFeatureValue, 1, $bbmProduct->getImprintName());
 
@@ -478,11 +443,11 @@ class Bibliomundi extends Module
                     $product->addFeaturesCustomToDB($idFeatureValueAutor, 1, $autorsName);
                 }
 
-                //Inserts Illustrators separated by common commas ","
-                if ($ilustradorsName = implode(',', array_map(array('\BBMParser\Model\Contributor', 'getFullNameStatically'), $bbmProduct->getContributorsByType('Ilustrador')))) {
-                    $idFeatureValueIlustrador = $product->addFeaturesToDB($this->featureIDIlustrador, null, 1);
-                    $product->addFeaturesCustomToDB($idFeatureValueIlustrador, 1, $ilustradorsName);
-                }
+//                //Inserts Illustrators separated by common commas ","
+//                if ($ilustradorsName = implode(',', array_map(array('\BBMParser\Model\Contributor', 'getFullNameStatically'), $bbmProduct->getContributorsByType('Ilustrador')))) {
+//                    $idFeatureValueIlustrador = $product->addFeaturesToDB($this->featureIDIlustrador, null, 1);
+//                    $product->addFeaturesCustomToDB($idFeatureValueIlustrador, 1, $ilustradorsName);
+//                }
 
                 /*
                  * Download
@@ -508,22 +473,21 @@ class Bibliomundi extends Module
                 }
                 $downloadingImageFlg = true;
                 $cmd = "php downloadImage.php " . $product->id . " \"" . $bbmProduct->getTitle() . "\" \"" . $bbmProduct->getUrlFile() . "\" " . $result['total'] ." &";
-                if (Tools::substr(php_uname(), 0, 7) == "Windows"){ 
-                    pclose(popen("start ". $cmd, "r")); 
-                } 
-                else {
+                if (Tools::substr(php_uname(), 0, 7) == "Windows") {
+                    pclose(popen("start ". $cmd, "r"));
+                } else {
                     pclose(popen($cmd, "r"));
                 }
             }
             
-            if(isset($result['current']) && $result['current'] == $result['total']) {
+            if (isset($result['current']) && $result['current'] == $result['total']) {
                 $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
                 ftruncate($lock, 0);
                 $result['status'] = 'complete';
                 $result['content'] = $this->l('Successful operation!');
                 fwrite($lock, Tools::jsonEncode($result));
                 fclose($lock);
-            }            
+            }
         } catch (Exception $e) {
             $result['status'] = 'error';
             $result['content'] = $e->getMessage();
@@ -557,6 +521,7 @@ class Bibliomundi extends Module
                 $this->clientSecret   = (string)Tools::getValue('client_secret');
                 $this->operation      = (string)Tools::getValue('operation');
                 $this->environment    = (string)Tools::getValue('environment');
+                $this->addEbooksCat    = (string)Tools::getValue('add_ebooks_cat');
 
                 try {
                     $result = array('status' => 'free');
@@ -567,16 +532,7 @@ class Bibliomundi extends Module
                             if ($result->status == 'in progress') {
                                 if (time() - filemtime(dirname(__FILE__).'/log/import.lock') > 5) {
                                     unlink(dirname(__FILE__).'/log/import.lock');
-                                    // restart
                                 }
-                                // else {
-                                //     header('Content-Type: application/json; charset=utf-8');
-                                //     echo Tools::jsonEncode(array(
-                                //         'status' => 'in progress',
-                                //         'output' => 'Successfully'
-                                //     ));
-                                //     exit;
-                                // }
                             }
                         }
                     }
@@ -586,7 +542,8 @@ class Bibliomundi extends Module
                             'clientID' => $this->clientID,
                             'clientSecret' => $this->clientSecret,
                             'operation' => $this->operation,
-                            'environment' => $this->environment
+                            'environment' => $this->environment,
+                            'addEbooksCat' => $this->addEbooksCat
                         );
                         $post_params = array();
                         foreach ($post_data as $key => &$val) {
@@ -664,17 +621,22 @@ class Bibliomundi extends Module
     private function createFeaturesAndOptions()
     {
         $features = array(
-            'ISBN'             => 'ISBN',
-            'PUBLISHER_NAME'   => 'Editora',
-            'FORMAT_TYPE'      => 'Formato',
-            'EDITION_NUMBER'   => 'Edição',
-            'PROTECTION_TYPE'  => 'Proteção',
-            'IDIOM'            => 'Idioma',
-            'PAGES_NUMBER'     => 'Número de Páginas',
-            'AGE_RATING'       => 'Faixa Etária',
-            'COLLECTION_TITLE' => 'Coleção',
-            'AUTOR'            => 'Autor',
-            'ILUSTRADOR'       => 'Ilustrador'
+//            'ISBN'             => 'ISBN',
+//            'PUBLISHER_NAME'   => 'Editora',
+//            'FORMAT_TYPE'      => 'Formato',
+//            'EDITION_NUMBER'   => 'Edição',
+//            'PROTECTION_TYPE'  => 'Proteção',
+//            'IDIOM'            => 'Idioma',
+//            'PAGES_NUMBER'     => 'Número de Páginas',
+//            'AGE_RATING'       => 'Faixa Etária',
+//            'COLLECTION_TITLE' => 'Coleção',
+//            'AUTOR'            => 'Autor',
+//            'ILUSTRADOR'       => 'Ilustrador'
+            'PUBLISHER_NAME'    => 'Editora',
+            'IDIOM'             => 'Idioma',
+            'PAGES_NUMBER'      => 'Número de Páginas',
+            'PROTECTION_TYPE'   => 'DRM'
+
         );
 
         foreach ($features as $key => $value) {
@@ -696,6 +658,7 @@ class Bibliomundi extends Module
         if (!Configuration::updateValue('BBM_OPTION_CLIENT_ID', null) ||
                 !Configuration::updateValue('BBM_OPTION_CLIENT_SECRET', null) ||
                     !Configuration::updateValue('BBM_OPTION_OPERATION', 1) ||
+                    !Configuration::updateValue('BBM_OPTION_ADD_EBOOKS_CAT', 1) ||
                         !Configuration::updateValue('BBM_OPTION_ENVIRONMENT', 1)) {
              return false;
         }
@@ -710,9 +673,7 @@ class Bibliomundi extends Module
         if ($insertType == 1) { //If Tag, process is Ignored
             return true;
         } else if ($insertType == 2) { //Category
-            //d($insertType);
             //Create Author Category, takes and ID and adds to Configuration Table
-
             $category = new MYCategory();
             $category->name[(int)Configuration::get('PS_LANG_DEFAULT')] = 'Autor';
             $category->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = 'Autor';
@@ -883,12 +844,42 @@ class Bibliomundi extends Module
                             'label' => $this->l('Production')
                         )
                     )
-                )
+                ),
+                array(
+                    'type'      => 'radio',
+                    'label'     => $this->l('Add ebooks category'),
+                    //'desc'      => $this->l('Sandbox for testing and Production for real!'),
+                    'name'      => 'add_ebooks_cat',
+                    'required'  => true,
+                    'class'     => 't',
+                    'is_bool'   => true,
+                    'values'    => array(
+                        array(
+                            'id'    => 'yes',
+                            'value' => 1,
+                            'label' => $this->l('Yes')
+                        ),
+                        array(
+                            'id'    => 'no',
+                            'value' => 2,
+                            'label' => $this->l('No')
+                        )
+                    )
+                ),
             ),
             'submit' => array(
                 'title' => $this->l('Import'),
                 'class' => 'btn btn-default'
-            )
+            ),
+            'buttons' => array(
+                'remove-all-ebooks' => array(
+                    'title' => $this->l('Remove all ebooks'),
+                    'name' => 'remove-all-ebooks',
+                    'type' => 'button',
+                    'class' => 'btn btn-default remove-all-ebooks pull-right',
+                    'icon' => 'process-icon-cancel',
+                ),
+            ),
         );
      
         $helper = new HelperForm();
@@ -943,7 +934,13 @@ class Bibliomundi extends Module
         } else if ($this->environment == 2) {
             $helper->fields_value['environment'] = 2;
         }
-        
+
+        if ($this->addEbooksCat == 1) {
+            $helper->fields_value['add_ebooks_cat'] = 1;
+        } else {
+            $helper->fields_value['add_ebooks_cat'] = 2;
+        }
+
         $html = 'Attention! Importing may take several minutes';
         return $html . $helper->generateForm($fields_form);
     }
@@ -990,61 +987,44 @@ class Bibliomundi extends Module
     public function hookActionPaymentConfirmation($params)
     {
         $bbmEbooks = array();
-
         foreach ($params['cart']->getProducts() as $product) {
             if ($idBBM = MYProduct::getIDBBMByID($product['id_product'])) {
                 $bbmEbooks[$idBBM] = $product;
             }
         }
-
-        //d($bbmEbooks);
-
         if (count($bbmEbooks)) {
             try {
-                $purchase = new \BBM\Purchase($this->clientID, $this->clientSecret);
+                $invoiceDate = Db::getInstance()->getValue('SELECT `invoice_date` FROM `' . _DB_PREFIX_ . 'orders` WHERE `id_order` = ' . $params['id_order']);
+                $invoiceTime = (!empty($invoiceDate) && ($invoiceDate != '0000-00-00 00:00:00') ) ? strtotime($invoiceDate) : time();
 
-                $purchase->environment = $this->environmentAlias[$this->environment];
-
-                //$purchase->verbose(true);
-
-                $customer = new MYCustomer($params['cart']->id_customer);
-
-                $address = $customer->getMYAddresses((int)Configuration::get('PS_LANG_DEFAULT'), $params['cart']->id_address_delivery);
-
-                $gender = array(1 => 'm', 2 => 'f');
-
-                preg_match_all('!\d+!', $address[0]['postcode'], $zipCode);
-
-                $bbmCustomer = array(
-                    'customerIdentificationNumber'  => (int) $customer->id, // INT, YOUR STORE CUSTOMER ID
-                    'customerFullname'              => $customer->firstname . ' ' . $this->context->customer->lastname, // STRING, CUSTOMER FULL NAME
-                    'customerEmail'                 => $customer->email, // STRING, CUSTOMER EMAIL
-                    'customerGender'                => $gender[$customer->id_gender], // ENUM, CUSTOMER GENDER, USE m OR f (LOWERCASE!! male or female)
-                    'customerBirthday'              => str_replace('-', '/', $this->context->customer->birthday), // STRING, CUSTOMER BIRTH DATE, USE Y/m/d (XXXX/XX/XX)
-                    'customerCountry'               => $address[0]['country_iso'], // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER COUNTRY (BR, US, ES, etc)
-                    'customerZipcode'               => implode('', $zipCode[0]), // STRING, POSTAL CODE, ONLY NUMBERS
-                    'customerState'                 => $address[0]['state_iso'] // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER STATE (RJ, SP, NY, etc)
-                );
-
-                $purchase->setCustomer($bbmCustomer);
-
-                foreach ($bbmEbooks as $key => $ebook) {
-                    $purchase->addItem($key, $ebook['price'], MYProduct::getIsoCodeByIDBBM($key));//Bibliomundi ID and Price
-                }
-
-                $purchase->validate();
-
-                $purchase->checkout($params['id_order'], time());
-
-                //exit;
+                $purchase = $this->_validatePurchase($bbmEbooks, $params);
+                $purchase->checkout('PRESTA_BBM_' . $params['id_order'], $invoiceTime);
             } catch (Exception $e) {
-                //d($e);
-                //Error at this moment is really serious.
+                PrestaShopLogger::addLog($e->getMessage(), 3);
+                throw new PrestaShopException('There was an internal problem. We removed the cart for you. Sorry for the inconvenience!');
             }
         }
     }
 
-    //Validate
+    //Validate order
+    public function hookActionValidateOrder($params)
+    {
+        $bbmEbooks = array();
+        foreach ($params['cart']->getProducts() as $product) {
+            if ($idBBM = MYProduct::getIDBBMByID($product['id_product'])) {
+                $bbmEbooks[$idBBM] = $product;
+            }
+        }
+        if (count($bbmEbooks)) {
+            try {
+                $this->_validatePurchase($bbmEbooks, $params);
+            } catch (Exception $e) {
+                PrestaShopLogger::addLog($e->getMessage(), 3);
+                throw new PrestaShopException('There was an internal problem. We removed the cart for you. Sorry for the inconvenience!');
+            }
+        }
+    }
+
     public function hookDisplayBeforePayment($params)
     {
         $bbmEbooks = array();
@@ -1054,41 +1034,9 @@ class Bibliomundi extends Module
                 $bbmEbooks[$idBBM] = $product;
             }
         }
-
         if (count($bbmEbooks)) {
             try {
-                $purchase = new \BBM\Purchase($this->clientID, $this->clientSecret);
-
-                $purchase->environment = $this->environmentAlias[$this->environment];
-
-                //$purchase->verbose(true);
-
-                $customer = new MYCustomer($params['cart']->id_customer);
-
-                $address = $customer->getMYAddresses((int)Configuration::get('PS_LANG_DEFAULT'), $params['cart']->id_address_delivery);
-
-                $gender = array(1 => 'm', 2 => 'f');
-
-                preg_match_all('!\d+!', $address[0]['postcode'], $zipCode);
-
-                $bbmCustomer = array(
-                    'customerIdentificationNumber'  => (int) $customer->id, // INT, YOUR STORE CUSTOMER ID
-                    'customerFullname'              => $customer->firstname . ' ' . $this->context->customer->lastname, // STRING, CUSTOMER FULL NAME
-                    'customerEmail'                 => $customer->email, // STRING, CUSTOMER EMAIL
-                    'customerGender'                => $gender[$customer->id_gender], // ENUM, CUSTOMER GENDER, USE m OR f (LOWERCASE!! male or female)
-                    'customerBirthday'              => str_replace('-', '/', $this->context->customer->birthday), // STRING, CUSTOMER BIRTH DATE, USE Y/m/d (XXXX/XX/XX)
-                    'customerCountry'               => $address[0]['country_iso'], // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER COUNTRY (BR, US, ES, etc)
-                    'customerZipcode'               => implode('', $zipCode[0]), // STRING, POSTAL CODE, ONLY NUMBERS
-                    'customerState'                 => $address[0]['state_iso'] // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER STATE (RJ, SP, NY, etc)
-                );
-
-                $purchase->setCustomer($bbmCustomer);
-
-                foreach ($bbmEbooks as $key => $ebook) {
-                    $purchase->addItem($key, $ebook['price'], MYProduct::getIsoCodeByIDBBM($key));//Bibliomundi ID and Price
-                }
-
-                $purchase->validate();
+                $this->_validatePurchase($bbmEbooks, $params);
             } catch (Exception $e) {
                 $errors = array();
                 //Regardless of the error, all ebooks are curretly removed from the basket as the API is not informing what error is the cause.
@@ -1096,36 +1044,11 @@ class Bibliomundi extends Module
                     $errors[] = $ebook['name'];
 
                     //Remove from Shopping Cart
-
-                    // Db::getInstance()->execute('
-                    //     DELETE FROM `' . _DB_PREFIX_ . 'cart_product`
-                    //     WHERE `id_product` = ' . pSQL((int)$ebook['id_product']) . '
-                    //     AND `id_cart` = ' . pSQL((int)$params['cart']->id) . '');
-                        
                     $where = pSQL('`id_product` = ' . pSQL((int)$ebook['id_product']) .
                              ' AND `id_cart` = ' . pSQL((int)$params['cart']->id));
 
                     Db::getInstance()->delete('cart_product', $where);
                 }
-
-                /*$json = json_decode(str_replace("'", '"', $e->getMessage()));//Temporary Workaround
-                $errors = array();
-
-                foreach ($json as $ebookError) 
-                {
-                       //Locates ID which returned the message
-                       preg_match('#ID\s([0-9]+)#', $ebookError->message, $match);
-                       $idEbookBBM = $match[1];
-
-                    $errors[] = $bbmEbooks[$idEbookBBM]['name'];
-
-                       //Remove from Shopping Cart
-
-                       Db::getInstance()->execute('
-                        DELETE FROM '._DB_PREFIX_.'cart_product
-                        WHERE id_product = '.(int)$bbmEbooks[$idEbookBBM]['id_product'].'
-                        AND id_cart = '.(int)$params['cart']->id. '');
-                }*/
 
                 $this->context->controller->errors[] = Tools::displayError('There was an internal problem with the following ebooks: ' . implode(',', $errors) . '. We removed the cart for you. Sorry for the inconvenience!', !Tools::getValue('ajax'));
             }
@@ -1143,17 +1066,11 @@ class Bibliomundi extends Module
     {
         if (isset($this->cartErrorNumber)) {
             switch ($this->cartErrorNumber) { //It might be required to create na alternative than this simple Delete and Update
-                case 1: 
+                case 1:
                     $where = pSQL('`id_product` = ' . pSQL((int)$this->cartParams['product']->id) .
                              ' AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id));
 
                     Db::getInstance()->delete('cart_product', $where);
-
-                    // Db::getInstance()->execute('
-                    //     DELETE FROM `' . _DB_PREFIX_ . 'cart_product`
-                    //     WHERE `id_product` = ' . pSQL((int)$this->cartParams['product']->id) . '
-                    //     AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id) . '');
-
                     break;
                 case 2:
                     $where = pSQL('`id_product` = ' . pSQL((int)$this->cartParams['product']->id) .
@@ -1161,17 +1078,22 @@ class Bibliomundi extends Module
 
                     Db::getInstance()->update('cart_product', array(
                         'quantity' => 1,
-                        'date_add' => NOW()
+                        'date_add' => "NOW()"
                         ), $where);
-
-                    // Db::getInstance()->execute('
-                    //     UPDATE `' . _DB_PREFIX_ . 'cart_product`
-                    //     SET `quantity` = 1, `date_add` = NOW()
-                    //     WHERE `id_product` = ' . pSQL((int)$this->cartParams['product']->id) . '
-                    //     AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id) . '');
                     break;
             }
             $this->context->controller->errors[] = Tools::displayError("You can not purchase more than 1 unit of the product \"{$this->cartParams['product']->name}\"", !Tools::getValue('ajax'));
+        } else if (isset($this->cartParams) && $this->cartParams['operator'] == 'up') {
+            try {
+                // Validate if product can be purchase on bibliomundi or not
+                $this->_validateProductAfterAdd();
+            } catch (Exception $e) {
+                $where = pSQL('`id_product` = ' . pSQL((int)$this->cartParams['product']->id) .
+                    ' AND `id_cart` = ' . pSQL((int)$this->cartParams['cart']->id));
+
+                Db::getInstance()->delete('cart_product', $where);
+                $this->context->controller->errors[] = Tools::displayError("This product can\'t be purchase at the moment. Sorry for the inconvenience!");
+            }
         }
     }
 
@@ -1202,8 +1124,8 @@ class Bibliomundi extends Module
 
         $data = array(
             'ebook_id' => (int) $params['id_bbm_product'],
-            'transaction_time' => time(),
-            'transaction_key' => $params['id_order']
+            'transaction_time' => time(),//$params['invoice_time'],
+            'transaction_key' => 'PRESTA_BBM_' . $params['id_order']
         );
 
         try {
@@ -1220,7 +1142,6 @@ class Bibliomundi extends Module
 
         Db::getInstance()->delete('bbm_product', $where);
 
-        // Db::getInstance()->delete(_DB_PREFIX_ . 'bbm_product', "id_product = " . $params['id_product']);
         return true;
     }
 
@@ -1230,7 +1151,6 @@ class Bibliomundi extends Module
 
         Db::getInstance()->delete('bbm_category', $where);
 
-        // Db::getInstance()->delete(_DB_PREFIX_ . 'bbm_category', "id_category = " . $params['category']->id_category);
         return true;
     }
 
@@ -1269,17 +1189,17 @@ class Bibliomundi extends Module
 
         $feature->deleteSelection(
             array(
-                $this->featureIDISBN,
+                //$this->featureIDISBN,
                 $this->featureIDPublisherName,
-                $this->featureIDFormatType,
-                $this->featureIDEditionNumber,
+                //$this->featureIDFormatType,
+                //$this->featureIDEditionNumber,
                 $this->featureIDIdiom,
                 $this->featureIDPagesNumber,
                 $this->featureIDProtectionType,
-                $this->featureIDAgeRating,
-                $this->featureIDCollectionTitle,
-                $this->featureIDAutor,
-                $this->featureIDIlustrador
+                //$this->featureIDAgeRating,
+                //$this->featureIDCollectionTitle,
+                //$this->featureIDAutor,
+                //$this->featureIDIlustrador
             )
         );
 
@@ -1297,11 +1217,110 @@ class Bibliomundi extends Module
             fclose($fp);
         }
     }
-    private function _updateImportLog($result) 
+    public static function _updateImportLog($result)
     {
-        $lock = fopen(dirname(__FILE__).'/log/import.lock', 'a');
-        ftruncate($lock, 0);
-        fwrite($lock, Tools::jsonEncode($result));
+        $lock = fopen(dirname(__FILE__).'/log/import.lock', 'w');
+        //ftruncate($lock, 0);
+        if (flock($lock, LOCK_EX)) {
+            ftruncate($lock, 0);
+            fwrite($lock, Tools::jsonEncode($result));
+            fflush($lock);
+            flock($lock, LOCK_UN);
+        }
+
         fclose($lock);
+    }
+
+    private function _validateProductAfterAdd()
+    {
+        try {
+            $products = $this->context->cart->getProducts();
+            $bbmEbooks = array();
+            foreach ($products as $product) {
+                if ($idBBM = MYProduct::getIDBBMByID($product['id_product'])) {
+                    $bbmEbooks[$idBBM] = $product;
+                }
+            }
+            $this->_validatePurchase($bbmEbooks, array('cart' => $this->context->cart));
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
+    private function _validatePurchase($bbmEbooks, $params)
+    {
+        try {
+            $purchase = new \BBM\Purchase($this->clientID, $this->clientSecret);
+
+            $purchase->environment = $this->environmentAlias[$this->environment];
+
+            //$purchase->verbose(true);
+
+            $customer = new MYCustomer($params['cart']->id_customer);
+
+            $address = $customer->getMYAddresses((int)Configuration::get('PS_LANG_DEFAULT'), $params['cart']->id_address_delivery);
+            if (empty($address)) { // Fake address for validate only.
+                $address[0]['postcode'] = '000000';
+                $address[0]['country_iso'] = 'BR';
+            }
+            $gender = array(1 => 'm', 2 => 'f');
+
+            preg_match_all('!\d+!', $address[0]['postcode'], $zipCode);
+
+            $birthDay = ($this->context->customer->birthday == "0000-00-00") ? "1970-01-01" : $this->context->customer->birthday;
+            $idGender = ($customer->id_gender) ? $customer->id_gender : 1;
+
+            $bbmCustomer = array(
+                'customerIdentificationNumber' => (int)$customer->id, // INT, YOUR STORE CUSTOMER ID
+                'customerFullname' => $customer->firstname . ' ' . $this->context->customer->lastname, // STRING, CUSTOMER FULL NAME
+                'customerEmail' => $customer->email, // STRING, CUSTOMER EMAIL
+                'customerGender' => $gender[$idGender], // ENUM, CUSTOMER GENDER, USE m OR f (LOWERCASE!! male or female)
+                'customerBirthday' => str_replace('-', '/', $birthDay), // STRING, CUSTOMER BIRTH DATE, USE Y/m/d (XXXX/XX/XX)
+                'customerCountry' => $address[0]['country_iso'], // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER COUNTRY (BR, US, ES, etc)
+                'customerZipcode' => implode('', $zipCode[0]), // STRING, POSTAL CODE, ONLY NUMBERS
+                'customerState' => !empty($address[0]['state_iso']) ? $address[0]['state_iso'] : 'RJ' // STRING, 2 CHAR STRING THAT INDICATE THE CUSTOMER STATE (RJ, SP, NY, etc)
+            );
+
+            $purchase->setCustomer($bbmCustomer);
+            foreach ($bbmEbooks as $key => $ebook) {
+                $purchase->addItem($key, $ebook['price'], MYProduct::getIsoCodeByIDBBM($key));//Bibliomundi ID and Price
+            }
+            $purchase->validate();
+        } catch (Exception $e) {
+            PrestaShopLogger::addLog($e->getMessage(), 3);
+            throw $e;
+        }
+        return $purchase;
+    }
+
+//    public function hookDisplayProductTab($params)
+//    {
+//        $this->context->smarty->assign(
+//            array(
+//                //'my_module_name' => Configuration::get('MYMODULE_NAME'),
+//                'my_module_link' => $this->context->link->getModuleLink('bibliomundi', 'display')
+//            )
+//        );
+//        return $this->display(__FILE__, 'mymodule.tpl');
+//    }
+
+    private function _getEbookCategoryId()
+    {
+        if ($this->addEbooksCat == 1) {
+            $ebookCats = Category::searchByName((int)Configuration::get('PS_LANG_DEFAULT'), 'eBooks');
+            if (!empty($ebookCats)) {
+                $ebookCat = array_shift($ebookCats);
+                return $ebookCat["id_category"];
+            } else {
+                $category = new MYCategory();
+                $category->name[(int)Configuration::get('PS_LANG_DEFAULT')] = 'eBooks';
+                $category->link_rewrite[(int)Configuration::get('PS_LANG_DEFAULT')] = Tools::link_rewrite('ebooks');
+                $category->id_parent = Category::getRootCategory()->id;//Associates a Default Category, which usually is Home
+                $category->add();
+                return $category->id;
+            }
+        } else {
+            return Category::getRootCategory()->id;//Associates a Default Category, which usually is Home
+        }
     }
 }

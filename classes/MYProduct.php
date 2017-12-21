@@ -19,6 +19,8 @@ class MYProduct extends ProductCore
 {
     public function __construct($id_product = null, $full = false, $id_lang = null, $id_shop = null, Context $context = null)
     {
+        //self::$definition['fields']['bbm_id_product'] = array('type' => self::TYPE_STRING);
+        //self::$definition['fields']['is_bbm'] = array('type' => self::TYPE_BOOL);
         parent::__construct($id_product, $full, $id_lang, $id_shop, $context);
     }
     

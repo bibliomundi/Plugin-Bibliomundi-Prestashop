@@ -133,6 +133,7 @@ class Download extends Connect
         }
         catch(Exception $e)
         {
+
             throw new Exception($e->getMessage(), $e->getCode());
         }
 
@@ -145,20 +146,22 @@ class Download extends Connect
             {
                 header('Content-Type: application/epub+zip');
                 header('Content-Disposition: attachment; filename="'.md5(time()).'.epub"');
+                $request = $request->__toString();
             }
             else
             {
                 header('Content-Type: application/vnd.adobe.adept+xml');
                 header('Content-Disposition: attachment; filename="'.md5(time()).'.acsm"');
+                $request = utf8_decode($request->__toString());
             }
 
-            header("Content-Transfer-Encoding: binary");
+            // EXIT THE PROGRAM WITH THE BINARY REQUEST.
+            //header("Content-Transfer-Encoding: binary");
+            header('Content-Description: File Transfer');
             header('Expires: 0');
             header('Pragma: no-cache');
             header("Content-Length: ".strlen($request));
 
-            // EXIT THE PROGRAM WITH THE BINARY REQUEST.
-            $request = utf8_decode($request->__toString());
             exit($request);
         }
     }

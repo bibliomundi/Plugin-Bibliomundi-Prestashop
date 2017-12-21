@@ -16,6 +16,7 @@
 				!form.find('input[name="client_id"]').val() || 
 				!form.find('input[name="client_secret"]').val() || 
 				!form.find('input[name="operation"]').val() ||
+				!form.find('input[name="add_ebooks_cat"]').val() ||
 				!form.find('input[name="environment"]').val()
 			) {
 				return true;
@@ -42,6 +43,47 @@
 			
 			return false;
 		});
+
+		$(".remove-all-ebooks").on("click", function(){
+			var confirm = window.confirm("Are you sure ?");
+			if ( confirm ) {
+                dialogContent.html('<i class="icon-refresh icon-spin"></i>&nbsp;Removing...');
+
+                form.block({
+                    message: $('#import-blocker'),
+                    css: {
+                        'border': 'none'
+                    }
+                });
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'post',
+                    dataType: 'json',
+                    data: form.serialize()
+                }).done(removeProducts).fail(function () {
+                    alert('Unexpected error occurs');
+                    form.unblock();
+                });
+            }
+		});
+
+        function removeProducts() {
+            $.ajax({
+                url: '/modules/bibliomundi/bibliomundi-remove.php',
+                dataType: 'json',
+                cache: false
+            }).success(function(res){
+                if(res.error != ''){
+                    alert(res.error);
+                    form.unblock();
+                }else{
+                    dialogContent.html(res.msg);
+                    window.setTimeout(function() {
+                        form.unblock();
+                    }, 5000);
+                }
+            });
+        }
 
 		function validProccess() {
 			$.ajax({
